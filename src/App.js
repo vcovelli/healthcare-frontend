@@ -6,6 +6,7 @@ function App() {
     const [error, setError] = useState(null); // Error state
     const [form, setForm] = useState({ title: "", description: "", date_time: ""}); // Form state
     const [successMessage, setSuccessMessage] = useState(""); // Success message
+    const [editingId, setEditingId] = useState(null); // Track the appointment being edited
 
     // Fetch appointments on component load
     useEffect(() => {
@@ -29,6 +30,25 @@ function App() {
         setForm({ ...form, [name]: value });
     }
 
+    const handleEdit = (appointment) => {
+        setForm({
+            title: appointment.title,
+            description: appointment.description,
+            date_time: new Date(appointment.date_time).toISOString().slice(0, 16), // Format for datetime-local input
+        });
+        setEditingId(appointment.id); // Track the appointment being edited
+    };
+
+    const handleDelete = async (id) => {
+        try {
+            await axiosInstance.delete(`${id}/`); // Send DELETE request
+            setAppointments((prev) => prev.filter((appointment) => appointment.id !== id)); // Remove from state
+        } catch (err) {
+            console.error("Error deleting appointment:", err);
+            setError("Error deleting appointment");
+        }
+    };
+
     // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -44,13 +64,27 @@ function App() {
         }
 
         try {
-            const response = await axiosInstance.post("", form);
+            if (editingId) {
+                // Update appointment
+                const response = await axiosInstance.put(`${editingId}/`, form);
+                setAppointments((prev) =>
+                    prev.map((appointment) =>
+                        appointment.id === editingId ? response.data : appointment
+                    )
+                );
+                setEditingId(null); // Reset editing state
+            } else {
+                // Create appointment
+                const response = await axiosInstance.post("", form);
             setAppointments((prev) => [...prev, response.data]); // Add new appointment
+            }    
+            
             setForm({ title: "", description: "", date_time: "" }); // Reset form
-            setSuccessMessage("Appointment created successfully!");
+            setSuccessMessage(editingId ? "Appointment updated successfully!" : "Appointment created successfully!");
             setError(null);
         } catch (err) {
-            setError("Error creating appointment");
+            console.error("Error:", err.response?.data || err.message);
+            setError(editingId ? "Error updated appointment" : "Error creating appointment");
             setSuccessMessage("");
         }
     };
@@ -72,7 +106,9 @@ function App() {
                         <li key={appointment.id}>
                             <strong>Title:</strong> {appointment.title} <br />
                             <strong>Description:</strong> {appointment.description} <br />
-                            <strong>Date:</strong> {appointment.date_time}
+                            <strong>Date:</strong> {new Date(appointment.date_time).toLocaleString()} <br />
+                            <button onClick={() => handleEdit(appointment)}>Edit</button>
+                            <button onClick={() => handleDelete(appointment.id)}>Delete</button>
                         </li>
                     ))}
                 </ul>
