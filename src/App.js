@@ -32,6 +32,17 @@ function App() {
     // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // Check if the date is in the future
+        const selectedDate = new Date(form.date_time);
+        const now = new Date();
+
+        if (selectedDate <= now) {
+            setError("Date and time must be in the future.");
+            setSuccessMessage("");
+            return;
+        }
+
         try {
             const response = await axiosInstance.post("", form);
             setAppointments((prev) => [...prev, response.data]); // Add new appointment
@@ -98,6 +109,8 @@ function App() {
                         value={form.date_time}
                         onChange={handleChange}
                         required
+                        min={new Date().toISOString().slice(0, 16)} // Ensures users can only pick a future date/time
+                        placeholder="Select a future date and time" 
                     />    
                 </div>
                 <button type="submit">Create</button>
