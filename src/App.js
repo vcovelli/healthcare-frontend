@@ -1,28 +1,43 @@
 import { useState } from "react";
 
 // Modal Component
-function Modal({ isOpen, onClose, appointment }) {
+function Modal({ isOpen, onClose, appointment, onSave }) {
   if (!isOpen) return null;
+
+  const handleSubmit = (e) => {
+    e.preventDefault(); // Prevent the form from reloading the page
+    const updatedAppointment = {
+      ...appointment,
+      title: e.target.title.value, // Access the value using the "name" attribute
+      date: e.target.date.value,
+      time: e.target.time.value,
+    };
+    onSave(updatedAppointment); // Call the onSave function passed from the parent component
+  };
+  
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
       <div className="bg-white p-6 rounded shadow-lg w-96">
         <h2 className="text-2xl font-bold text-gray-800 mb-4">Edit Appointment</h2>
-        <form>
+        <form onSubmit={handleSubmit}>
           <label className="block mb-2 text-gray-600">Title</label>
           <input
+            name="title"
             type="text"
             defaultValue={appointment?.title || ""}
             className="w-full p-2 border border-gray-300 rounded mb-4"
           />
           <label className="block mb-2 text-gray-600">Date</label>
           <input
+            name="date"
             type="date"
             defaultValue={appointment?.date || ""}
             className="w-full p-2 border border-gray-300 rounded mb-4"
           />
           <label className="block mb-2 text-gray-600">Time</label>
           <input
+            name="time"
             type="time"
             defaultValue={appointment?.time || ""}
             className="w-full p-2 border border-gray-300 rounded mb-4"
@@ -51,10 +66,10 @@ function App() {
   const [isModalOpen, setModalOpen] = useState(false);
   const [currentAppointment, setCurrentAppointment] = useState(null);
 
-  const appointments = [
+  const [appointments, setAppointments] = useState([
     { id: 1, title: "Dentist Appointment", date: "2025-01-15", time: "10:00 AM" },
     { id: 2, title: "Team Meeting", date: "2025-01-16", time: "2:00 PM" },
-  ];
+  ]);
 
   const openModal = (appointment) => {
     setCurrentAppointment(appointment);
@@ -64,6 +79,15 @@ function App() {
   const closeModal = () => {
     setModalOpen(false);
     setCurrentAppointment(null);
+  };
+
+  const handleSave = (updatedAppointment) => {
+    setAppointments((prevAppointments) =>
+      prevAppointments.map((appointment) =>
+        appointment.id === updatedAppointment.id ? updatedAppointment : appointment
+      )
+    );
+    closeModal();
   };
 
   return (
@@ -91,6 +115,7 @@ function App() {
         isOpen={isModalOpen}
         onClose={closeModal}
         appointment={currentAppointment}
+        onSave={handleSave}
       />
     </div>
   );
