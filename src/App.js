@@ -2,6 +2,13 @@ import React, { useEffect, useState } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
+// Set business hours
+const BUSINESS_HOURS = {
+  start: 9, // 9 AM
+  end: 17, // 5 PM (24-hour format)
+};
+
+// Format time to AM/PM
 const formatTime24to12 = (time24) => {
   if (!time24 || typeof time24 !== "string" || !time24.includes(":")) {
     console.error("Invalid time:", time24);
@@ -14,6 +21,7 @@ const formatTime24to12 = (time24) => {
   return `${hours12}:${minutes.toString().padStart(2, "0")} ${period}`;
 };
 
+// Format date to MM-DD-YYYY
 const formatDateToMMDDYYYY = (dateString) => {
   if (!dateString) return "Invalid Date"; // Fallback for invalid dates
 
@@ -28,13 +36,23 @@ const formatDateToMMDDYYYY = (dateString) => {
 };
 
 // Modal Component
-function Modal({ isOpen, onClose, appointment, onSave }) {
+function Modal({ isOpen, onClose, appointment, onSave, appointments }) {
   const [validationMessage, setValidationMessage] = useState("");
   const [dateTime, setDateTime] = useState(
     appointment?.date && appointment?.time
       ? new Date(`${appointment.date}T${appointment.time}`)
       : new Date()
   );
+
+  const isTimeAvailable = (time) => {
+    const selectedDate = dateTime.toISOString().split("T")[0]; // Get the selected date (YYYY-MM-DD)
+    const formattedTime = time.toTimeString().split(" ")[0]; // Get the time in HH:MM:SS format
+  
+    return !appointments.some(
+      (appointment) => 
+        appointment.date === selectedDate && appointment.time === formattedTime
+    );
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault(); // Prevent the form from reloading the page
@@ -51,6 +69,15 @@ function Modal({ isOpen, onClose, appointment, onSave }) {
       return;
     }
     
+    // Check if within business hours
+    const hour = dateTime.getHours();
+    if (hour < BUSINESS_HOURS.start || hour >= BUSINESS_HOURS.end) {
+      setValidationMessage(
+        `Please select a time between ${BUSINESS_HOURS.start}:00 and ${BUSINESS_HOURS.end}:00.`
+      );
+      return;
+    }
+
     const updatedAppointment = {
       ...appointment,
       title: e.target.title?.value.trim() || "", // Use the trimmed title value
@@ -84,6 +111,14 @@ function Modal({ isOpen, onClose, appointment, onSave }) {
             dateFormat="MM/dd/yyyy h:mm aa"
             className="w-full p-2 border border-gray-300 rounded mb-4"
             minDate={new Date()} // Prevent past dates
+            filterTime={(time) => {
+              const hour = time.getHours();
+              return (
+                hour >= BUSINESS_HOURS.start && 
+                hour < BUSINESS_HOURS.end &&
+                isTimeAvailable(time) // Also check if the time is not booked
+              );  
+            }}
           />
           {validationMessage && (
             <p className="text-red-500 text-sm-mb-4">{validationMessage}</p>
@@ -201,6 +236,7 @@ function App() {
         onClose={closeModal}
         appointment={currentAppointment}
         onSave={handleSave}
+        appointments={appointments}
       />
     </div>
   );
