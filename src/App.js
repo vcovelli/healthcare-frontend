@@ -1,27 +1,78 @@
 import React, { useEffect, useState } from "react";
 
+const formatDateToMMDDYYYY = (dateString) => {
+  if (!dateString || typeof dateString !== "string") {
+    console.error("Invalid date string:", dateString);
+    return "Invalid Date"; // Fallback for invalid dates
+  }
+
+  const date = new Date(dateString); // Parse the date string into a Date object
+  if (isNaN(date.getTime())) {
+    console.error("Unable to parse date", dateString);
+    return "Invalid Date";
+  }
+
+  const month = (date.getMonth() + 1).toString().padStart(2, "0"); // Months are zero-based
+  const day = date.getDate().toString().padStart(2, "0");
+  const year = date.getFullYear();
+
+  return `${month}-${day}-${year}`;
+};
+
+// Helper function to format time
+function formatTime24to12(time24) {
+  if (!time24 || typeof time24 !== "string" || !time24.includes(":")) {
+    return "Invalid time"; // Fallback for undefined or empty time
+  }  
+  const [hours, minutes] = time24.split(":").map(Number);
+  const period = hours >= 12 ? "PM" : "AM";
+  const hours12 = hours % 12 || 12; // Convert 0 to 12 for 12 AM
+  return `${hours12}:${minutes.toString().padStart(2, "0")} ${period}`;
+};
+
 // Modal Component
 function Modal({ isOpen, onClose, appointment, onSave }) {
   const [validationMessage, setValidationMessage] = useState("");
+  const currentHour = new Date().getHours();
+  const dynamicMessage =
+    currentHour >= 18 // Example: Closing time is 6 PM (18:00)
+      ? "Sorry, bookings for today are closed. Please book for tomorrow."
+      : "Please select a date at least 24 hours in the future.";
 
   if (!isOpen) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault(); // Prevent the form from reloading the page
 
+    // Retrieve values from the form
+    const title = e.target.title?.value.trim() || ""; // Default to an empty string if undefined
+    const date = e.target.date?.value || ""; // Default to an empty string if undefined
+    const time = e.target.time?.value || ""; // Default to an empty string if undefined
+
+    // Check if fields are empty
+    if (!title || !date || !time) {
+      setValidationMessage("All fields are required. Please complete the form.");
+      return;
+    }
+
+    // Ensure valid date format
+    const inputDate = new Date(date);
+    if (isNaN(inputDate.getTime())) {
+      setValidationMessage("Please enter a valid date.");
+      return;
+    }
+
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Normalize to midnight
-
-    const inputDate = new Date(e.target.date.value);
     inputDate.setHours(0, 0, 0, 0); // Normalize input date to midnight
 
     // Validate for past dates
     if (inputDate < today) {
-      alert("Please select a future date and time.");
+      alert("Please select a future date.");
       return;
     }
 
-    // Validate for past times if the date is today
+    // Validate for same-day future times
     if (inputDate.getTime() === today.getTime()) {
       const currentTime = new Date();
       const [inputHours, inputMinutes] = e.target.time.value.split(":").map(Number);
@@ -34,11 +85,14 @@ function Modal({ isOpen, onClose, appointment, onSave }) {
       }
     }
 
-    setValidationMessage(""); // Clear any previous message
+    const formattedDate = formatDateToMMDDYYYY(date);
+
+    // Clear validation message if everything is valid
+    setValidationMessage("");
     const updatedAppointment = {
       ...appointment,
       title: e.target.title.value, // Access the value using the "name" attribute
-      date: e.target.date.value,
+      date: formattedDate, // Use formatted date
       time: e.target.time.value,
     };
     onSave(updatedAppointment); // Call the onSave function passed from the parent component
@@ -64,6 +118,9 @@ function Modal({ isOpen, onClose, appointment, onSave }) {
             min={new Date().toISOString().split("T")[0]} // Disable past dates
             className="w-full p-2 border border-gray-300 rounded mb-4"
           />
+          <p className="text-gray-500 text-sm italic mb-4 text-center whitespace-normal px-4">
+            {dynamicMessage}
+          </p>
           {validationMessage && (
             <p className="text-red-500 text-sm-mb-4">{validationMessage}</p>
           )}
@@ -159,14 +216,20 @@ function App() {
         Create Appointment
       </button>
 
-        {appointments.map((appointment) => (
+        {appointments
+          .filter((appointment) => {
+            return appointment.date && appointment.time && new Date(appointment.date).toString() !== "Invalid Date";
+          })
+          .map((appointment) => (
           <div
             key={appointment.id}
             className="p-4 bg-white rounded shadow hover:shadow-lg transition"
           >
             <h2 className="text-xl font-semibold text-gray-700">{appointment.title}</h2>
-            <p className="text-gray-600">{appointment.date}</p>
-            <p className="text-gray-600">{appointment.time}</p>
+            <p className="text-gray-600">
+              {appointment.date ? formatDateToMMDDYYYY(appointment.date) : "No Date"}
+            </p>
+            <p className="text-gray-600">{formatTime24to12(appointment.time)}</p>
             <button
               className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
               onClick={() => openModal(appointment)}
