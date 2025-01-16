@@ -1,108 +1,68 @@
 import React, { useEffect, useState } from "react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
-const formatDateToMMDDYYYY = (dateString) => {
-  if (!dateString || typeof dateString !== "string") {
-    console.error("Invalid date string:", dateString);
-    return "Invalid Date"; // Fallback for invalid dates
-  }
-
-  const date = new Date(dateString); // Parse the date string into a Date object
-  if (isNaN(date.getTime())) {
-    console.error("Unable to parse date", dateString);
-    return "Invalid Date";
-  }
-
-  const month = (date.getMonth() + 1).toString().padStart(2, "0"); // Months are zero-based
-  const day = date.getDate().toString().padStart(2, "0");
-  const year = date.getFullYear();
-
-  return `${month}-${day}-${year}`;
-};
-
-// Helper function to format time
-function formatTime24to12(time24) {
+const formatTime24to12 = (time24) => {
   if (!time24 || typeof time24 !== "string" || !time24.includes(":")) {
+    console.error("Invalid time:", time24);
     return "Invalid time"; // Fallback for undefined or empty time
   }  
+
   const [hours, minutes] = time24.split(":").map(Number);
   const period = hours >= 12 ? "PM" : "AM";
   const hours12 = hours % 12 || 12; // Convert 0 to 12 for 12 AM
   return `${hours12}:${minutes.toString().padStart(2, "0")} ${period}`;
 };
 
+const formatDateToMMDDYYYY = (dateString) => {
+  if (!dateString) return "Invalid Date"; // Fallback for invalid dates
+
+  const date = new Date(dateString); // Parse the date string into a Date object
+  if (isNaN(date)) return "Invalid Date";
+
+  const month = (date.getUTCMonth() + 1).toString().padStart(2, "0"); // Months are zero-based
+  const day = date.getUTCDate().toString().padStart(2, "0");
+  const year = date.getUTCFullYear();
+
+  return `${month}-${day}-${year}`;
+};
+
 // Modal Component
 function Modal({ isOpen, onClose, appointment, onSave }) {
   const [validationMessage, setValidationMessage] = useState("");
-  const currentHour = new Date().getHours();
-  const dynamicMessage =
-    currentHour >= 18 // Example: Closing time is 6 PM (18:00)
-      ? "Sorry, bookings for today are closed. Please book for tomorrow."
-      : "Please select a date at least 24 hours in the future.";
-
-  if (!isOpen) return null;
+  const [dateTime, setDateTime] = useState(
+    appointment?.date && appointment?.time
+      ? new Date(`${appointment.date}T${appointment.time}`)
+      : new Date()
+  );
 
   const handleSubmit = (e) => {
     e.preventDefault(); // Prevent the form from reloading the page
 
-    // Retrieve values from the form
-    const title = e.target.title?.value.trim() || ""; // Default to an empty string if undefined
-    const date = e.target.date?.value || ""; // Default to an empty string if undefined
-    const time = e.target.time?.value || ""; // Default to an empty string if undefined
-
-    // Check if fields are empty
-    if (!title || !date || !time) {
-      setValidationMessage("All fields are required. Please complete the form.");
+    // Ensure a title is provided
+    const title = e.target.title?.value.trim();
+    if (!title) {
+      setValidationMessage("Title is required.");
       return;
     }
 
-    // Parse the date correctly, ensuring no time zone offset issues
-    const [year, month, day] = date.split("-").map(Number); // Extract components
-    const inputDate = new Date(Date.UTC(year, month - 1, day)); // Create a UTC date directly
-
-    if (isNaN(inputDate.getTime())) {
-      setValidationMessage("Please enter a valid date.");
+    if (!dateTime || dateTime <= new Date()) {
+      setValidationMessage("Please select a valid future date and time.");
       return;
     }
-
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0); // Normalize to midnight UTC
-
-    // Validate for past dates
-    if (inputDate < today) {
-      alert("Please select a future date.");
-      return;
-    }
-
-    // Validate for same-day future times
-    if (inputDate.getTime() === today.getTime()) {
-      const now = new Date(); // Current time in local timezone
-      const [inputHours, inputMinutes] = e.target.time.value.split(":").map(Number);
-      
-      // Construct a full Date object for the selected time
-      const selectedTime = new Date(today);
-      selectedTime.setHours(inputHours, inputMinutes, 0, 0); // Set hours and minutes
-
-      if (selectedTime <= now) {
-        setValidationMessage("Please select a time for tomorrow.");
-        return;
-      }
-    } else if (inputDate.getTime() > today.getTime()) {
-      // Skip time validation for future dates
-      setValidationMessage("") // Clear validation if everything else is valid
-    }
-
-    const formattedDate = formatDateToMMDDYYYY(`${year}-${month}-${day}`);
-
-    // Clear validation message if everything is valid
-    setValidationMessage("");
+    
     const updatedAppointment = {
       ...appointment,
-      title, // Use the trimmed title value
-      date: formattedDate, // Use formatted date
-      time,
+      title: e.target.title?.value.trim() || "", // Use the trimmed title value
+      date: dateTime.toISOString().split("T")[0], // Format as YYYY-MM-DD
+      time: dateTime.toTimeString().split(" ")[0], // Format as HH:MM:SS
     };
-    onSave(updatedAppointment); // Call the onSave function passed from the parent component
+
+    setValidationMessage(""); // Clear validation message 
+    onSave(updatedAppointment); // Save the appointment
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
@@ -116,27 +76,18 @@ function Modal({ isOpen, onClose, appointment, onSave }) {
             defaultValue={appointment?.title || ""}
             className="w-full p-2 border border-gray-300 rounded mb-4"
           />
-          <label className="block mb-2 text-gray-600">Date</label>
-          <input
-            name="date"
-            type="date"
-            defaultValue={appointment?.date || ""}
-            min={new Date().toISOString().split("T")[0]} // Disable past dates
+          <label className="block mb-2 text-gray-600">Date and Time</label>
+          <DatePicker
+            selected={dateTime}
+            onChange={(date) => setDateTime(date)}
+            showTimeSelect
+            dateFormat="MM/dd/yyyy h:mm aa"
             className="w-full p-2 border border-gray-300 rounded mb-4"
+            minDate={new Date()} // Prevent past dates
           />
-          <p className="text-gray-500 text-sm italic mb-4 text-center whitespace-normal px-4">
-            {dynamicMessage}
-          </p>
           {validationMessage && (
             <p className="text-red-500 text-sm-mb-4">{validationMessage}</p>
           )}
-          <label className="block mb-2 text-gray-600">Time</label>
-          <input
-            name="time"
-            type="time"
-            defaultValue={appointment?.time || ""}
-            className="w-full p-2 border border-gray-300 rounded mb-4"
-          />
           <button
             type="button"
             onClick={onClose}
@@ -209,8 +160,6 @@ function App() {
       );
     }
   };
-  
-
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
       <h1 className="text-3xl font-bold text-gray-800 mb-4">My Appointments</h1>
@@ -221,12 +170,7 @@ function App() {
       >
         Create Appointment
       </button>
-
-        {appointments
-          .filter((appointment) => {
-            return appointment.date && appointment.time && new Date(appointment.date).toString() !== "Invalid Date";
-          })
-          .map((appointment) => (
+        {appointments.filter((appointment) => appointment.date && appointment.time).map((appointment) => (
           <div
             key={appointment.id}
             className="p-4 bg-white rounded shadow hover:shadow-lg transition"
