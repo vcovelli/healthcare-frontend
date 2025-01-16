@@ -55,16 +55,17 @@ function Modal({ isOpen, onClose, appointment, onSave }) {
       return;
     }
 
-    // Ensure valid date format
-    const inputDate = new Date(date);
+    // Parse the date correctly, ensuring no time zone offset issues
+    const [year, month, day] = date.split("-").map(Number); // Extract components
+    const inputDate = new Date(Date.UTC(year, month - 1, day)); // Create a UTC date directly
+
     if (isNaN(inputDate.getTime())) {
       setValidationMessage("Please enter a valid date.");
       return;
     }
 
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Normalize to midnight
-    inputDate.setHours(0, 0, 0, 0); // Normalize input date to midnight
+    today.setUTCHours(0, 0, 0, 0); // Normalize to midnight UTC
 
     // Validate for past dates
     if (inputDate < today) {
@@ -77,23 +78,26 @@ function Modal({ isOpen, onClose, appointment, onSave }) {
       const currentTime = new Date();
       const [inputHours, inputMinutes] = e.target.time.value.split(":").map(Number);
       if (
-        inputHours < currentTime.getHours() ||
-        (inputHours === currentTime.getHours() && inputMinutes < currentTime.getMinutes())
+        inputHours < currentTime.getUTCHours() ||
+        (inputHours === currentTime.getUTCHours() && inputMinutes < currentTime.getUTCMinutes())
       ) {
         setValidationMessage("Please select a future time for today.");
         return;
       }
+    } else if (inputDate.getTime() > today.getTime()) {
+      // Skip time validation for future dates
+      setValidationMessage("") // Clear validation if everything else is valid
     }
 
-    const formattedDate = formatDateToMMDDYYYY(date);
+    const formattedDate = formatDateToMMDDYYYY(`${year}-${month}-${day}`);
 
     // Clear validation message if everything is valid
     setValidationMessage("");
     const updatedAppointment = {
       ...appointment,
-      title: e.target.title.value, // Access the value using the "name" attribute
+      title, // Use the trimmed title value
       date: formattedDate, // Use formatted date
-      time: e.target.time.value,
+      time,
     };
     onSave(updatedAppointment); // Call the onSave function passed from the parent component
   };
