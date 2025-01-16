@@ -75,13 +75,15 @@ function Modal({ isOpen, onClose, appointment, onSave }) {
 
     // Validate for same-day future times
     if (inputDate.getTime() === today.getTime()) {
-      const currentTime = new Date();
+      const now = new Date(); // Current time in local timezone
       const [inputHours, inputMinutes] = e.target.time.value.split(":").map(Number);
-      if (
-        inputHours < currentTime.getUTCHours() ||
-        (inputHours === currentTime.getUTCHours() && inputMinutes < currentTime.getUTCMinutes())
-      ) {
-        setValidationMessage("Please select a future time for today.");
+      
+      // Construct a full Date object for the selected time
+      const selectedTime = new Date(today);
+      selectedTime.setHours(inputHours, inputMinutes, 0, 0); // Set hours and minutes
+
+      if (selectedTime <= now) {
+        setValidationMessage("Please select a time for tomorrow.");
         return;
       }
     } else if (inputDate.getTime() > today.getTime()) {
