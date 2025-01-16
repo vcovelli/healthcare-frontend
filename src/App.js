@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 // Modal Component
 function Modal({ isOpen, onClose, appointment, onSave }) {
@@ -65,10 +65,17 @@ function App() {
   const [isModalOpen, setModalOpen] = useState(false);
   const [currentAppointment, setCurrentAppointment] = useState(null);
 
-  const [appointments, setAppointments] = useState([
-    { id: 1, title: "Dentist Appointment", date: "2025-01-15", time: "10:00 AM" },
-    { id: 2, title: "Team Meeting", date: "2025-01-16", time: "2:00 PM" },
-  ]);
+  const [appointments, setAppointments] = useState(() => {
+    const savedAppointments = localStorage.getItem("appointments");
+    return savedAppointments ? JSON.parse(savedAppointments) : [
+      { id: 1, title: "Dentist Appointment", date: "2025-01-15", time: "10:00 AM" },
+      { id: 2, title: "Team Meeting", date: "2025-01-16", time: "2:00 PM" },
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem("appointments", JSON.stringify(appointments));
+  }, [appointments]);
 
   const openModal = (appointment) => {
     setCurrentAppointment(appointment);
@@ -81,11 +88,21 @@ function App() {
   };
 
   const handleSave = (updatedAppointment) => {
-    setAppointments((prevAppointments) =>
-      prevAppointments.map((appointment) =>
-        appointment.id === updatedAppointment.id ? updatedAppointment : appointment
-      )
-    );
+    if (!updatedAppointment.id) {
+      // Create new appointment
+      const newAppointment = {
+        ...updatedAppointment,
+        id: Date.now(), // Generate a unique ID
+      };
+      setAppointments((prevAppointments) => [...prevAppointments, newAppointment]);
+    } else {
+      // Update existing appointment
+      setAppointments((prevAppointments) =>
+        prevAppointments.map((appointment) =>
+          appointment.id === updatedAppointment.id ? updatedAppointment : appointment
+        )
+      );
+    }  
     closeModal();
   };
 
@@ -102,6 +119,13 @@ function App() {
     <div className="p-6 bg-gray-100 min-h-screen">
       <h1 className="text-3xl font-bold text-gray-800 mb-4">My Appointments</h1>
       <div className="space-y-4">
+      <button
+        className="mb-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+        onClick={() => openModal({ id: null, title: "", date: "", time: "" })}
+      >
+        Create Appointment
+      </button>
+
         {appointments.map((appointment) => (
           <div
             key={appointment.id}
