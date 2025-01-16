@@ -2,10 +2,39 @@ import React, { useEffect, useState } from "react";
 
 // Modal Component
 function Modal({ isOpen, onClose, appointment, onSave }) {
+  const [validationMessage, setValidationMessage] = useState("");
+
   if (!isOpen) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault(); // Prevent the form from reloading the page
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize to midnight
+
+    const inputDate = new Date(e.target.date.value);
+    inputDate.setHours(0, 0, 0, 0); // Normalize input date to midnight
+
+    // Validate for past dates
+    if (inputDate < today) {
+      alert("Please select a future date and time.");
+      return;
+    }
+
+    // Validate for past times if the date is today
+    if (inputDate.getTime() === today.getTime()) {
+      const currentTime = new Date();
+      const [inputHours, inputMinutes] = e.target.time.value.split(":").map(Number);
+      if (
+        inputHours < currentTime.getHours() ||
+        (inputHours === currentTime.getHours() && inputMinutes < currentTime.getMinutes())
+      ) {
+        setValidationMessage("Please select a future time for today.");
+        return;
+      }
+    }
+
+    setValidationMessage(""); // Clear any previous message
     const updatedAppointment = {
       ...appointment,
       title: e.target.title.value, // Access the value using the "name" attribute
@@ -32,8 +61,12 @@ function Modal({ isOpen, onClose, appointment, onSave }) {
             name="date"
             type="date"
             defaultValue={appointment?.date || ""}
+            min={new Date().toISOString().split("T")[0]} // Disable past dates
             className="w-full p-2 border border-gray-300 rounded mb-4"
           />
+          {validationMessage && (
+            <p className="text-red-500 text-sm-mb-4">{validationMessage}</p>
+          )}
           <label className="block mb-2 text-gray-600">Time</label>
           <input
             name="time"
