@@ -24,10 +24,26 @@ const Login = () => {
         navigate("/");
       }, 2000);
     } catch (err) {
-      setError(err.message);
+      setError(getFriendlyErrorMessage(err.code));
       setSuccessMessage(""); // Clear any previous success messages
     }
   };
+
+// Function to map Firebase errors to friendly messages
+const getFriendlyErrorMessage = (errorCode) => {
+  switch (errorCode) {
+    case "auth/invalid-email": // Currently the only error message
+      return "The email address is invalid. Please enter a valid email.";
+    // case "auth/user-not-found":
+    //  return "No account found with this email. Please sign up.";
+    // case "auth/wrong-password":
+    //  return "Incorrect password. Please try again.";
+    // case "auth/network-request-failed":
+    //  return "Network error. Please check your connection.";
+    default:
+      return "An unexpected error occurred. Please try again later.";
+  }
+};
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
