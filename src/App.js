@@ -1,11 +1,24 @@
 import React, { useEffect, useState } from "react";
 import DatePicker from "react-datepicker";
+import { Link } from "react-router-dom";
 import "react-datepicker/dist/react-datepicker.css";
 
 // Set business hours
 const BUSINESS_HOURS = {
   start: 9, // 9 AM
   end: 17, // 5 PM (24-hour format)
+};
+
+// Helper function to check if a time is avaliable
+const isTimeAvailable = (appointments, dateTime) => {
+  if (!dateTime) return false; 
+  const selectedDate = dateTime.toISOString().split("T")[0]; // Get the selected date (YYYY-MM-DD)
+  const formattedTime = dateTime.toTimeString().split(" ")[0]; // Get the time in HH:MM:SS format
+
+  return !appointments.some(
+    (appointment) => 
+      appointment.date === selectedDate && appointment.time === formattedTime
+  );
 };
 
 // Format time to AM/PM
@@ -43,16 +56,6 @@ function Modal({ isOpen, onClose, appointment, onSave, appointments }) {
       ? new Date(`${appointment.date}T${appointment.time}`)
       : new Date()
   );
-
-  const isTimeAvailable = (time) => {
-    const selectedDate = dateTime.toISOString().split("T")[0]; // Get the selected date (YYYY-MM-DD)
-    const formattedTime = time.toTimeString().split(" ")[0]; // Get the time in HH:MM:SS format
-  
-    return !appointments.some(
-      (appointment) => 
-        appointment.date === selectedDate && appointment.time === formattedTime
-    );
-  };
 
   const handleSubmit = (e) => {
     e.preventDefault(); // Prevent the form from reloading the page
@@ -116,7 +119,7 @@ function Modal({ isOpen, onClose, appointment, onSave, appointments }) {
               return (
                 hour >= BUSINESS_HOURS.start && 
                 hour < BUSINESS_HOURS.end &&
-                isTimeAvailable(time) // Also check if the time is not booked
+                isTimeAvailable(appointments, time) // Also check if the time is not booked
               );  
             }}
           />
