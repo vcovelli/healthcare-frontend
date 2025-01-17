@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import DatePicker from "react-datepicker";
 import { Link } from "react-router-dom";
 import "react-datepicker/dist/react-datepicker.css";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "./firebaseConfig";
 
 // Set business hours
 const BUSINESS_HOURS = {
@@ -147,9 +149,10 @@ function Modal({ isOpen, onClose, appointment, onSave, appointments }) {
 
 // App Component
 function App() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [isModalOpen, setModalOpen] = useState(false);
   const [currentAppointment, setCurrentAppointment] = useState(null);
-
   const [appointments, setAppointments] = useState(() => {
     const savedAppointments = localStorage.getItem("appointments");
     return savedAppointments ? JSON.parse(savedAppointments) : [
@@ -161,6 +164,23 @@ function App() {
   useEffect(() => {
     localStorage.setItem("appointments", JSON.stringify(appointments));
   }, [appointments]);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  if (loading) {
+    return <p>Loading...</p>;
+  }
+
+  if (!user) {
+    return <p>You are not authorized to view this page. Please log in.</p>;
+  }
 
   const openModal = (appointment) => {
     setCurrentAppointment(appointment);
@@ -243,6 +263,6 @@ function App() {
       />
     </div>
   );
-}
+};
 
 export default App;
