@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios"; // Import axios for API calls
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./firebaseConfig";
-import { createAppointment, fetchAppointments } from "./appointmentsAPI"; // Import API calls
+import { fetchAppointments } from "./appointmentsAPI"; // Import API calls
 
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -162,11 +162,13 @@ function App() {
     const loadAppointments = async () => {
       try {
         const appointmentsData = await fetchAppointments();
+        console.log("Appointments loaded:", appointmentsData); // Debug log
         setAppointments(appointmentsData); // Update state with backend data
       } catch (error) {
         console.error("Error fetching appointments:", error);
       }
     };
+
     loadAppointments();
   }, []);
 
@@ -191,11 +193,18 @@ function App() {
   // Function to create an appointment using the backend
   const createAppointment = async (appointmentData) => {
     try {
-      const response = await axios.post("http://127.0.0.1:8000/api/appointments/", appointmentData);
+      const token = await auth.currentUser.getIdToken(); // Get Firebase ID token
+      const response = await axios.post("http://127.0.0.1:8000/api/appointments/", appointmentData, {
+        headers: {
+          Authorization: `Bearer ${token}`, // Add the token in the Authorization header
+        },
+      });
       console.log("Appointment created:", response.data);
-      setAppointments((prevAppointments) => [...prevAppointments, response.data]); // Add to local state
+
+      // Update appointments state with the new appointment
+      setAppointments((prevAppointments) => [...prevAppointments, response.data]);
     } catch (error) {
-      console.error("Error creating appointment:", error);
+      console.error("Error creating appointment:", error.response?.data || error.message);
     }
   };
 
@@ -234,12 +243,14 @@ function App() {
     <div className="p-6 bg-gray-100 min-h-screen">
       <h1 className="text-3xl font-bold text-gray-800 mb-4">My Appointments</h1>
       <div className="space-y-4">
+      {/* Create Appointment Button */}
       <button
         className="mb-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
         onClick={() => setModalOpen(true)}
       >
         Create Appointment
       </button>
+      {/* Display Appointments */}
         {appointments.filter((appointment) => appointment.date && appointment.time).map((appointment) => (
           <div
             key={appointment.id}
@@ -269,6 +280,7 @@ function App() {
           </div>
         ))}
       </div>
+      {/* Modal Component */}
       <Modal
         isOpen={isModalOpen}
         onClose={closeModal}
