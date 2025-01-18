@@ -172,14 +172,19 @@ function App() {
     loadAppointments();
   }, []);
 
-  // Listen for Firebase auth state changes
+  // Check authentication state
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setLoading(false);
+      console.log("Auth state changed:", currentUser); // Debug log
+      if (currentUser) {
+        setUser(currentUser); // User is authenticated
+      } else {
+        setUser(null); // No user is authenticated
+      }
+      setLoading(false); // Stop the loader
     });
 
-    return () => unsubscribe();
+    return () => unsubscribe(); // Cleanup listener on component unmount
   }, []);
 
   // Show loader or unauthorized message
@@ -230,15 +235,27 @@ function App() {
     closeModal();
   };
 
-  // Delete appointment function (to implement with backend later)
-  const handleDelete = (id) => {
+  // Function to delete an appointment
+  const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this appointment?")) {
+      try {
+        const token = await auth.currentUser.getIdToken(); // Get Firebase token
+        await axios.delete(`http://127.0.0.1:8000/api/appointments/${id}/`, {
+          headers: {
+            Authorization: `Bearer ${token}`, // Add the token in the Authorization header
+          },
+        });
+      
+      // Remove the deleted appointment from the frontend state
       setAppointments((prevAppointments) =>
         prevAppointments.filter((appointment) => appointment.id !== id)
       );
+      console.log(`Appointment with ID ${id} deleted successfully.`);
+    } catch (error) {
+      console.error("Error deleting appointment:", error.response?.data || error.message);
     }
   };
-
+};
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
       <h1 className="text-3xl font-bold text-gray-800 mb-4">My Appointments</h1>
