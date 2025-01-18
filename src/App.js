@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
-import DatePicker from "react-datepicker";
-import { Link } from "react-router-dom";
-import "react-datepicker/dist/react-datepicker.css";
+import axios from "axios"; // Import axios for API calls
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./firebaseConfig";
+import { createAppointment, fetchAppointments } from "./appointmentsAPI"; // Import API calls
+
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 // Set business hours
 const BUSINESS_HOURS = {
@@ -153,18 +155,22 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setModalOpen] = useState(false);
   const [currentAppointment, setCurrentAppointment] = useState(null);
-  const [appointments, setAppointments] = useState(() => {
-    const savedAppointments = localStorage.getItem("appointments");
-    return savedAppointments ? JSON.parse(savedAppointments) : [
-      { id: 1, title: "Dentist Appointment", date: "2025-01-15", time: "10:00 AM" },
-      { id: 2, title: "Team Meeting", date: "2025-01-16", time: "2:00 PM" },
-    ];
-  });
+  const [appointments, setAppointments] = useState([]);
 
+  // Fetch appointments from backend when component mounts
   useEffect(() => {
-    localStorage.setItem("appointments", JSON.stringify(appointments));
-  }, [appointments]);
+    const loadAppointments = async () => {
+      try {
+        const appointmentsData = await fetchAppointments();
+        setAppointments(appointmentsData); // Update state with backend data
+      } catch (error) {
+        console.error("Error fetching appointments:", error);
+      }
+    };
+    loadAppointments();
+  }, []);
 
+  // Listen for Firebase auth state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -174,32 +180,36 @@ function App() {
     return () => unsubscribe();
   }, []);
 
+  // Show loader or unauthorized message
   if (loading) {
     return <p>Loading...</p>;
   }
-
   if (!user) {
     return <p>You are not authorized to view this page. Please log in.</p>;
   }
 
-  const openModal = (appointment) => {
-    setCurrentAppointment(appointment);
-    setModalOpen(true);
+  // Function to create an appointment using the backend
+  const createAppointment = async (appointmentData) => {
+    try {
+      const response = await axios.post("http://127.0.0.1:8000/api/appointments/", appointmentData);
+      console.log("Appointment created:", response.data);
+      setAppointments((prevAppointments) => [...prevAppointments, response.data]); // Add to local state
+    } catch (error) {
+      console.error("Error creating appointment:", error);
+    }
   };
 
+  // Function to close modal
   const closeModal = () => {
     setModalOpen(false);
     setCurrentAppointment(null);
   };
 
-  const handleSave = (updatedAppointment) => {
+  // Handle save logic for new and updated appointments
+  const handleSave = async (updatedAppointment) => {
     if (!updatedAppointment.id) {
-      // Create new appointment
-      const newAppointment = {
-        ...updatedAppointment,
-        id: Date.now(), // Generate a unique ID
-      };
-      setAppointments((prevAppointments) => [...prevAppointments, newAppointment]);
+      // Create new appointment using backend
+      await createAppointment(updatedAppointment);
     } else {
       // Update existing appointment
       setAppointments((prevAppointments) =>
@@ -211,6 +221,7 @@ function App() {
     closeModal();
   };
 
+  // Delete appointment function (to implement with backend later)
   const handleDelete = (id) => {
     if (window.confirm("Are you sure you want to delete this appointment?")) {
       setAppointments((prevAppointments) =>
@@ -218,13 +229,14 @@ function App() {
       );
     }
   };
+
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
       <h1 className="text-3xl font-bold text-gray-800 mb-4">My Appointments</h1>
       <div className="space-y-4">
       <button
         className="mb-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-        onClick={() => openModal({ id: null, title: "", date: "", time: "" })}
+        onClick={() => setModalOpen(true)}
       >
         Create Appointment
       </button>
@@ -240,7 +252,10 @@ function App() {
             <p className="text-gray-600">{formatTime24to12(appointment.time)}</p>
             <button
               className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-              onClick={() => openModal(appointment)}
+              onClick={() => {
+                setCurrentAppointment(appointment);
+                setModalOpen(true);
+              }}
             >
               Edit
             </button>
