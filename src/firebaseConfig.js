@@ -1,6 +1,21 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
+import axios from "axios";
+
+export const getUserRole = async (token) => {
+  try {
+    const response = await axios.get("http://127.0.0.1:8000/api/profiles/", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data.role; // Assuming the role is returned here
+  } catch (error) {
+    console.error("Error fetching user role:", error);
+    throw error;
+  }
+};
 
 // https://firebase.google.com/docs/web/setup#available-libraries
 

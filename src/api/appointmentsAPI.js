@@ -1,5 +1,5 @@
 import axios from "axios";
-import { auth } from "./firebaseConfig";
+import { auth } from "../firebaseConfig";
 
 export const createAppointment = async (appointmentData) => {
   try {

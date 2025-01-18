@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "./firebaseConfig";
+import { auth } from "../firebaseConfig";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const Signup = () => {
   const [email, setEmail] = useState("");
@@ -12,8 +13,22 @@ const Signup = () => {
 
   const handleSignup = async (e) => {
     e.preventDefault();
+    
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const token = await userCredential.user.getIdToken(); // Get the Firebase token
+
+      // Send the Firebase token to the backend
+      await axios.post(
+        "http://127.0.0.1:8000/api/profiles/", // Replace with your backend endpoint
+      {}, // Empty body since the backend will handle profile creation
+      {
+        headers: {
+          Authorization: `Bearer ${token}`, // Add token to headers
+        },
+      }
+    );
+      
       setSuccessMessage("Signup successful! Redirecting to login..."); // Set success message
 
       // Clear previous errors
