@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios"; // Import axios for API calls
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./firebaseConfig";
-import { fetchAppointments } from "./appointmentsAPI"; // Import API calls
+import { fetchAppointments } from "./api/appointmentsAPI"; // Import API calls
 
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -199,15 +199,20 @@ function App() {
   const createAppointment = async (appointmentData) => {
     try {
       const token = await auth.currentUser.getIdToken(); // Get Firebase ID token
-      const response = await axios.post("http://127.0.0.1:8000/api/appointments/", appointmentData, {
+      const { title, date, time } = appointmentData; // Destructure only necessary fields
+
+      const response = await axios.post("http://127.0.0.1:8000/api/appointments/",
+      { title, date, time }, // Only send title, date, and time
+      {
         headers: {
-          Authorization: `Bearer ${token}`, // Add the token in the Authorization header
+          Authorization: `Bearer ${token}`, // Send token in header
         },
-      });
+      }
+    );
       console.log("Appointment created:", response.data);
 
       // Update appointments state with the new appointment
-      setAppointments((prevAppointments) => [...prevAppointments, response.data]);
+      return response.data;
     } catch (error) {
       console.error("Error creating appointment:", error.response?.data || error.message);
     }
