@@ -34,9 +34,8 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 // Set auth persistence to persist across reloads
-setPersistence(auth, browserLocalPersistence).catch((error) => {
-  console.error("Error setting persistence:", error);
-});
+setPersistence(auth, browserLocalPersistence)
+  .catch((error) => console.error("Error setting persistence:", error));
 
 console.log("API Key:", process.env.REACT_APP_FIREBASE_API_KEY);
 console.log("Auth Domain:", process.env.REACT_APP_FIREBASE_AUTH_DOMAIN);
