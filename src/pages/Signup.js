@@ -7,6 +7,7 @@ import axios from "axios";
 const Signup = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("client"); // Default role is "client"
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState(""); // To store success message
   const navigate = useNavigate(); // For navigation
@@ -19,9 +20,9 @@ const Signup = () => {
       const token = await userCredential.user.getIdToken(); // Get the Firebase token
 
       // Send the Firebase token to the backend
-      await axios.post(
-        "http://127.0.0.1:8000/api/profiles/", // Replace with your backend endpoint
-      {}, // Empty body since the backend will handle profile creation
+      const response = await axios.post(
+        "http://127.0.0.1:8000/api/profiles/create/", // Replace with your backend endpoint
+      { role, email, password }, 
       {
         headers: {
           Authorization: `Bearer ${token}`, // Add token to headers
@@ -30,10 +31,6 @@ const Signup = () => {
     );
       
       setSuccessMessage("Signup successful! Redirecting to login..."); // Set success message
-
-      // Clear previous errors
-      setError("");
-
       // Redirect to Login page after 2 seconds
       setTimeout(() => {
         navigate("/login");
@@ -65,6 +62,16 @@ const Signup = () => {
           onChange={(e) => setPassword(e.target.value)}
           className="w-full p-2 mb-4 border border-gray-300 rounded"
         />
+        <label className="block mb-2 text-gray-600">Select Role</label>
+        <select
+          value={role}
+          onChange={(e) => setRole(e.target.value)}
+          className="w-full p-2 mb-4 border border-gray-300 rounded"
+        >
+          <option value="client">Client</option>
+          <option value="staff">Staff</option>
+          <option value="admin">Admin</option>
+        </select>
         {error && <p className="text-red-500 text-sm">{error}</p>}
         {successMessage && (
           <p className="text-green-500 text-sm mb-4">
