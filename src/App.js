@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "./firebaseConfig";
+import { auth } from "./api/firebaseConfig";
 import Navbar from "./components/Navbar"; // Import Navbar
+import Footer from "./components/Footer";
+import Modal from "./components/Modal";
+import ClientDashboard from "./pages/ClientDashboard"; // Import ClientDashboard
 import { fetchAppointments, createAppointment, deleteAppointment } from "./api/appointmentsAPI"; // Import API calls
 import AppointmentCard from "./components/AppointmentCard";
-import Modal from "./components/Modal";
 
 // App Component
 function App() {
@@ -18,9 +21,15 @@ function App() {
   // Fetch appointments from backend when component mounts
   useEffect(() => {
     const loadAppointments = async () => {
+      if (!user) {
+        console.error("User is not authenticated. Cannot fetch appointments.");
+        return;
+      }
+
       try {
-        const appointmentsData = await fetchAppointments();
-        console.log("Appointments loaded:", appointmentsData); // Debug log
+        const token = await user.getIdToken(); // Ensure `user` is valid before calling this
+        const appointmentsData = await fetchAppointments(token);
+        console.log("Appointments fetched from API:", appointmentsData); // Debug log
         setAppointments(appointmentsData); // Update state with backend data
       } catch (error) {
         console.error("Error fetching appointments:", error);
@@ -28,20 +37,22 @@ function App() {
     };
 
     loadAppointments();
-  }, []);
+  }, [user]); // Ensure this runs only when `user` changes
 
-  // Check authentication state
+  // Monitor authentication state
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       console.log("Auth state changed:", currentUser); // Debug log
       if (currentUser) {
         setUser(currentUser);
+
         // Fetch user role from backend
         try {
           const token = await currentUser.getIdToken();
           const response = await fetch("http://127.0.0.1:8000/api/profiles/", {
             headers: { Authorization: `Bearer ${token}` },
           });
+
           if (response.ok) {
             const data = await response.json();
             setUserRole(data.role); // Set user role for Navbar
@@ -113,39 +124,44 @@ function App() {
 
     return (
       <div className="p-6 bg-gray-100 min-h-screen">
-        <Navbar userRole={userRole} /> {/* Include Navbar */}
-        <div className="container mx-auto py-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-4">My Appointments</h1>
-          <div className="space-y-4">
-            {/* Create Appointment Button */}
-            <button
-              className="mb-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-              onClick={() => setModalOpen(true)}
-            >
-              Create Appointment
-            </button>
-            {/* Display Appointments */}
-            {appointments.map((appointment) => (
-              <AppointmentCard
-                key={appointment.id}
-                appointment={appointment}
-                onDelete={handleDelete}
-                onEdit={(appt) => {
-                  setCurrentAppointment(appt);
+        <Navbar userRole={userRole} />
+        <Routes>
+          <Route 
+            path="/"
+            element={
+              <ClientDashboard
+                onCreateAppointment={() => setModalOpen(true)} // Open modal for new appointment
+                onEdit={(appointment) => {
+                  setCurrentAppointment(appointment);
                   setModalOpen(true);
                 }}
+                onDelete={handleDelete}
+                appointments={appointments} // Pass appointments
               />
-            ))}
-          </div>
-        </div>
-        {/* Modal Component */}
+            }
+        />
+        <Route
+            path="/client-dashboard"
+            element={
+              <ClientDashboard
+                onCreateAppointment={() => setModalOpen(true)}
+                onEdit={(appointment) => {
+                  setCurrentAppointment(appointment);
+                  setModalOpen(true);
+                }}
+                onDelete={handleDelete}
+                appointments={appointments}
+              />
+            }
+          />
+        </Routes>
         <Modal
           isOpen={isModalOpen}
           onClose={closeModal}
           appointment={currentAppointment}
           onSave={handleSave}
-          appointments={appointments}
         />
+        <Footer />
       </div>
     );
   }

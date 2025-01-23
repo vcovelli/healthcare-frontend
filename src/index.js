@@ -5,6 +5,7 @@ import "./styles/output.css"; // Tailwind CSS
 import App from "./App";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import ClientDashboard from "./pages/ClientDashboard"; // Import ClientDashboard
 import PrivateRoute from "./routes/PrivateRoute"; // Import PrivateRoute
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
@@ -15,6 +16,7 @@ root.render(
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/client-dashboard" element={<ClientDashboard />} /> {/* Directly test ClientDashboard */}
         <Route
           path="/"
           element={
