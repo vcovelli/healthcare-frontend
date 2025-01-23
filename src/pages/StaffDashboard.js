@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { auth } from "../firebaseConfig";
+import { auth } from "../api/firebaseConfig";
 
 const StaffDashboard = () => {
   const [appointments, setAppointments] = useState([]);
