@@ -12,6 +12,7 @@
     "react": "^19.0.0",
     "react-datepicker": "^7.6.0",
     "react-dom": "^19.0.0",
+    "react-icons": "^5.4.0",
     "react-router-dom": "^7.1.2",
     "react-scripts": "^5.0.1",
     "react-time-picker": "^7.0.0",
@@ -45,6 +46,7 @@
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.5.1",
+    "postcss-cli": "^11.0.0",
     "prettier": "^3.4.2",
     "tailwindcss": "^3.4.17"
   }
