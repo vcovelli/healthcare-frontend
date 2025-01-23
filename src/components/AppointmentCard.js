@@ -1,5 +1,6 @@
 import React from "react";
 import { deleteAppointment } from "../api/appointmentsAPI";
+import { FiEdit, FiTrash2 } from "react-icons/fi"; // Import icons
 import { formatDateToMMDDYYYY, formatTime24to12 } from "../utils/formatDate";
 
 const AppointmentCard = ({ appointment, onEdit, onDelete }) => {
@@ -16,26 +17,20 @@ const AppointmentCard = ({ appointment, onEdit, onDelete }) => {
       };
 
   return (
-    <div className="p-4 bg-white rounded shadow hover:shadow-lg transition">
-        <h2 className="text-xl font-semibold text-gray-700">{appointment.title}</h2>
-        <p className="text-gray-600">
-            {appointment.date ? formatDateToMMDDYYYY(appointment.date) : "No Date"}
-        </p>
-        <p className="text-gray-600">
-            {appointment.time ? formatTime24to12(appointment.time) : "No Time"}
-        </p>
-        <button
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 mr-2"
-          onClick={() => onEdit(appointment)}
-        >
-          Edit
+    <div className="bg-white shadow-lg rounded-lg p-6 mb-4">
+      <h2 className="text-xl font-semibold text-gray-800">Test</h2>
+      <p className="text-gray-500">02-01-2025</p>
+      <p className="text-gray-500">12:00 PM</p>
+      <div className="flex space-x-4 mt-4">
+        <button className="flex items-center space-x-2 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition">
+          <FiEdit />
+          <span>Edit</span>
         </button>
-        <button
-          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-          onClick={() => onDelete(appointment.id)}
-        >
-          Delete
+        <button className="flex items-center space-x-2 bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition">
+          <FiTrash2 />
+          <span>Delete</span>
         </button>
+      </div>
     </div>
   );
 };
