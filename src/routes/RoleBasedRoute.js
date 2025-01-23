@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { auth, getUserRole } from "../firebaseConfig";
+import { auth, getUserRole } from "../api/firebaseConfig";
 
-const RoleBasedRoute = ({ children }) => {
+const RoleBasedRoute = ({ children, allowedRoles }) => {
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -25,23 +25,14 @@ const RoleBasedRoute = ({ children }) => {
   }, []);
 
   if (loading) {
-    return <p>Loading...</p>;
+    return <p>Loading...</p>; // Show loading spinner
   }
 
-  // Log role state for debugging
-  console.log("Role in RoleBasedRoute:", role);
-
-  if (role === "admin") {
-    return <Navigate to="/dashboard/admin" />;
-  } else if (role === "staff") {
-    return <Navigate to="/dashboard/staff" />;
-  } else if (role === "client") {
-    return <Navigate to="/dashboard/client" />;
-  } else if (!role) {
-    return <Navigate to="/login" />; // Redirect to login if role is undefined
-  } else {
-    return <p>Unauthorized access</p>;
+  if (!allowedRoles.includes(role)) {
+    return <Navigate to="/" />; // Redirect if not authorized
   }
+
+  return children; // Render child components if authorized
 };
 
 export default RoleBasedRoute;
