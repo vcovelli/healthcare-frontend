@@ -4,17 +4,16 @@ import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth"
 import axios from "axios";
 
 export const getUserRole = async (token) => {
-  try {
-    const response = await axios.get("http://127.0.0.1:8000/api/profiles/", {
+  const response = await axios.post(
+    "http://127.0.0.1:8000/api/auth/role/",
+    {},
+    {
       headers: {
         Authorization: `Bearer ${token}`,
       },
-    });
-    return response.data.role; // Assuming the role is returned here
-  } catch (error) {
-    console.error("Error fetching user role:", error);
-    throw error;
-  }
+    }
+  );
+    return response.data.role;
 };
 
 // https://firebase.google.com/docs/web/setup#available-libraries
