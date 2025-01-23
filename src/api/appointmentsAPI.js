@@ -1,5 +1,5 @@
 import axios from "axios";
-import { auth } from "../firebaseConfig";
+import { auth } from "./firebaseConfig";
 
 // Function to create an appointment
 export const createAppointment = async (appointmentData) => {
@@ -18,19 +18,22 @@ export const createAppointment = async (appointmentData) => {
 };
 
 // Function to fetch all appointments for the logged-in user
-export const fetchAppointments = async () => {
-  try {
-    const token = await auth.currentUser.getIdToken(); // Get Firebase token
-    const response = await axios.get("http://127.0.0.1:8000/api/appointments/", {
-      headers: {
-        Authorization: `Bearer ${token}`, // Attach token
-      },
-    });
-    return response.data; // Return appointments data
-  } catch (error) {
-    console.error("Error fetching appointments:", error);
-    throw error; // Rethrow the error for handling in the calling function
+export const fetchAppointments = async (token) => {
+  if (!token) {
+    throw new Error("Token is required to fetch appointments.");
   }
+
+  const response = await fetch("http://127.0.0.1:8000/api/appointments/", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch appointments: ${response.statusText}`);
+  }
+
+  return response.json();
 };
 
 // Function to delete an appointment by ID
