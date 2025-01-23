@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { auth, getUserRole } from "../firebaseConfig";
+import { auth, getUserRole } from "../api/firebaseConfig";
 
 const Navbar = ({ initialRole }) => {
   const [role, setRole] = useState(initialRole || null);
@@ -29,30 +29,21 @@ const Navbar = ({ initialRole }) => {
   };
 
   return (
-    <nav className="bg-blue-600 text-white shadow-lg">
-      <div className="container mx-auto flex justify-between items-center p-4">
-        <Link to="/" className="text-2xl font-bold hover:underline">
+    <nav className="bg-gradient-to-r from-blue-600 to-teal-500 text-white shadow-md fixed w-full z-10">
+      <div className="container mx-auto flex justify-between items-center px-6 py-4">
+        <Link to="/" className="text-2xl font-bold hover:text-gray-200">
           Healthcare Scheduler
         </Link>
-        <div className="flex space-x-6">
-          {role === "admin" && (
-            <Link to="/admin" className="hover:underline">
-              Admin Dashboard
-            </Link>
-          )}
-          {role === "staff" && (
-            <Link to="/staff" className="hover:underline">
-              Staff Dashboard
-            </Link>
-          )}
-          {role === "client" && (
-            <Link to="/client" className="hover:underline">
-              Client Dashboard
-            </Link>
-          )}
+        <div className="flex items-center space-x-6">
+          <Link
+            to="/client-dashboard"
+            className="text-sm font-medium hover:text-gray-200"
+          >
+            Client Dashboard
+          </Link>
           <button
             onClick={handleSignOut}
-            className="bg-red-500 px-4 py-2 rounded-md hover:bg-red-600 transition duration-300"
+            className="bg-red-500 text-sm px-4 py-2 rounded-md hover:bg-red-600 transition-transform transform hover:scale-105"
           >
             Sign Out
           </button>
