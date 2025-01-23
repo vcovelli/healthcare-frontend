@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebaseConfig";
+import { auth } from "../api/firebaseConfig";
 import { Link, useNavigate } from "react-router-dom";
+import apiClient from "../api/apiClient";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -12,38 +13,54 @@ const Login = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      setSuccessMessage("Login successful! Redirecting...");
+      // Sign in the user with Firebase Authentication
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
 
-      // Clear any previous errors
-      setError("");
+      // Get the logged-in user from the userCredential
+      const user = userCredential.user;
 
-      // Redirect to the main app page after 2 seconds
-      setTimeout(() => {
-        navigate("/");
-      }, 2000);
-    } catch (err) {
-      setError(getFriendlyErrorMessage(err.code));
-      setSuccessMessage(""); // Clear any previous success messages
+      // Check the updated email verification status
+      if (!user.emailVerified) {
+        setError("Please verify your email before logging in.");
+        return;
+      }
+
+      // Force refresh the ID token to get the latest email verification status
+      const token = await user.getIdToken(true);
+      console.log("Firebase Token:", token);
+
+      // Send the token to the backend for verification
+      const response = await apiClient.post("auth/login/", {}, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      // Extract role from the backend response
+      const { role } = response.data; // Get the role from the response
+      // Store role in localStorage or a state management solution
+      localStorage.setItem("userRole", role);
+
+      // Debug: Log the role received from backend**
+      console.log("Role from backend:", role);
+
+      // Redirect based on role
+      if (role === "admin") {
+        navigate("/admin-dashboard");
+      } else if (role === "client") {
+        navigate("/client-dashboard");
+      } else if (role === "staff") {
+        navigate("/staff-dashboard");
+      } else {
+        setError("Unexpected user role. Please contact support.");
+      }
+    } catch(err) {
+      console.error("Backend Error:", error.response?.data || error.message);
+      setError("Login failed. Please check your credentials and try again.");
     }
   };
-
-// Function to map Firebase errors to friendly messages
-const getFriendlyErrorMessage = (errorCode) => {
-  switch (errorCode) {
-    case "auth/invalid-email": // Currently the only error message
-      return "The email address is invalid. Please enter a valid email.";
-    // case "auth/user-not-found":
-    //  return "No account found with this email. Please sign up.";
-    // case "auth/wrong-password":
-    //  return "Incorrect password. Please try again.";
-    // case "auth/network-request-failed":
-    //  return "Network error. Please check your connection.";
-    default:
-      return "An unexpected error occurred. Please try again later.";
-  }
-};
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">

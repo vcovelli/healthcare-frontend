@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebaseConfig";
+import { createUserWithEmailAndPassword, signOut, sendEmailVerification } from "firebase/auth";
+import { auth } from "../api/firebaseConfig";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
 
 const Signup = () => {
   const [email, setEmail] = useState("");
@@ -12,30 +11,50 @@ const Signup = () => {
   const [successMessage, setSuccessMessage] = useState(""); // To store success message
   const navigate = useNavigate(); // For navigation
 
-  const handleSignup = async (e) => {
-    e.preventDefault();
+  const handleSignup = async () => {
     
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const token = await userCredential.user.getIdToken(); // Get the Firebase token
+      // Ensure the current user is logged out
+      await signOut(auth);
 
-      // Send the Firebase token to the backend
-      const response = await axios.post(
-        "http://127.0.0.1:8000/api/profiles/create/", // Replace with your backend endpoint
-      { role, email, password }, 
-      {
-        headers: {
-          Authorization: `Bearer ${token}`, // Add token to headers
-        },
-      }
-    );
+      // Create the user in Firebase
+      console.log("Signing up user in Firebase...");
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Send email verification
+      await sendEmailVerification(user);
+      console.log("Verification email sent to:", user.email);
+
+      // Notify the user to verify their email
+      setSuccessMessage("Signup successful! Please check your email to verify your account.");
+
+      // Check if email is verified
+      //if (!user.emailVerified) {
+      //  console.error("Email not verified");
+      //  setError("Please verify your email before signing up.");
+      //  return;
+      //}
+
+      // Send data to backend
+      //console.log("Preparing to send request to backend...");
+      //await axios.post(
+      //  "http://127.0.0.1:8000/api/profiles/create/", 
+      //{ role, email, password }, 
+      //{
+      //  headers: {
+      //    Authorization: `Bearer ${token}`, // Add token to headers
+      //  },
+      //}
+    //);
+    console.log("Request sent successfully!");
       
-      setSuccessMessage("Signup successful! Redirecting to login..."); // Set success message
       // Redirect to Login page after 2 seconds
       setTimeout(() => {
         navigate("/login");
       }, 2000);
     } catch (err) {
+      console.error("Error during signup:", err.message);
       setError(err.message);
       setSuccessMessage(""); // Clear success message on error
     }
@@ -44,7 +63,10 @@ const Signup = () => {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
       <form
-        onSubmit={handleSignup}
+        onSubmit={(e) => {
+          e.preventDefault(); // Prevent form default action
+          handleSignup(); // Call your async signup logic
+        }}
         className="bg-white p-8 rounded shadow-md w-80"
       >
         <h2 className="text-2xl font-bold mb-6 text-center">Sign Up</h2>
