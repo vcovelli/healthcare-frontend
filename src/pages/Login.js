@@ -9,10 +9,13 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState(""); // For success message
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate(); // To redirect after login
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError("");
 
     try {
       // Sign in the user with Firebase Authentication
@@ -24,11 +27,13 @@ const Login = () => {
       // Check the updated email verification status
       if (!user.emailVerified) {
         setError("Please verify your email before logging in.");
+        setLoading(false);
         return;
       }
 
       // Force refresh the ID token to get the latest email verification status
       const token = await user.getIdToken(true);
+      localStorage.setItem("authToken", token);
       console.log("Firebase Token:", token);
 
       // Send the token to the backend for verification
@@ -59,6 +64,8 @@ const Login = () => {
     } catch(err) {
       console.error("Backend Error:", error.response?.data || error.message);
       setError("Login failed. Please check your credentials and try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
