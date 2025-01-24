@@ -9,6 +9,10 @@ const Navbar = ({ initialRole }) => {
   useEffect(() => {
     const fetchRole = async () => {
       try {
+        if (!auth.currentUser) {
+          navigate("/login");
+          return;
+        }
         const token = await auth.currentUser.getIdToken();
         const userRole = await getUserRole(token);
         setRole(userRole);
@@ -29,7 +33,7 @@ const Navbar = ({ initialRole }) => {
   };
 
   return (
-    <nav className="bg-gradient-to-r from-blue-600 to-teal-500 text-white shadow-md fixed w-full z-10">
+    <nav className="bg-gradient-to-r from-blue-600 to-blue-300 text-white shadow-md fixed w-full z-10">
       <div className="container mx-auto flex justify-between items-center px-6 py-4">
         <Link to="/" className="text-2xl font-bold hover:text-gray-200">
           Healthcare Scheduler
