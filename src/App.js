@@ -7,6 +7,7 @@ import Footer from "./components/Footer";
 import Modal from "./components/Modal";
 import ClientDashboard from "./pages/ClientDashboard"; // Import ClientDashboard
 import { fetchAppointments, createAppointment, deleteAppointment } from "./api/appointmentsAPI"; // Import API calls
+import HomePage from "./pages/HomePage"; // Import HomePage
 import AppointmentCard from "./components/AppointmentCard";
 
 // App Component
@@ -73,6 +74,16 @@ function App() {
     return () => unsubscribe(); // Cleanup listener on component unmount
   }, []);
 
+  // Debugging: Log current state
+  console.log("App.js - Current State:", {
+    user,
+    userRole,
+    loading,
+    isModalOpen,
+    currentAppointment,
+    appointments,
+  });
+
   // Show loader or unauthorized message
   if (loading) {
     return <p>Loading...</p>;
@@ -87,82 +98,100 @@ function App() {
     setCurrentAppointment(null);
   };
 
+  const handleCreateAppointment = (date) => {
+    console.log("Creating appointment for date:", date); // Debugging
+    setModalOpen(true);
+    setCurrentAppointment({
+      date,
+      time: "",
+      title: "",
+    });
+  };
+    
+
     // Handle save logic for new and updated appointments
-    const handleSave = async (updatedAppointment) => {
-      if (!updatedAppointment.id) {
-        try {
-          const newAppointment = await createAppointment(updatedAppointment);
-          setAppointments((prevAppointments) => [...prevAppointments, newAppointment]);
-        } catch (error) {
-          console.error("Error creating appointment:", error);
-        }
-      } else {
-        // Update existing appointment
-        setAppointments((prevAppointments) =>
-          prevAppointments.map((appointment) =>
-            appointment.id === updatedAppointment.id ? updatedAppointment : appointment
-          )
-        );
-      }  
-      closeModal();
-    };
+  const handleSave = async (updatedAppointment) => {
+    if (!updatedAppointment.id) {
+      try {
+        const newAppointment = await createAppointment(updatedAppointment);
+        setAppointments((prevAppointments) => [...prevAppointments, newAppointment]);
+      } catch (error) {
+        console.error("Error creating appointment:", error);
+      }
+    } else {
+      // Update existing appointment
+      setAppointments((prevAppointments) =>
+        prevAppointments.map((appointment) =>
+          appointment.id === updatedAppointment.id ? updatedAppointment : appointment
+        )
+      );
+    }  
+    closeModal();
+  };
 
       // Function to delete an appointment
-    const handleDelete = async (id) => {
-      if (window.confirm("Are you sure you want to delete this appointment?")) {
-        try {
-          await deleteAppointment(id);
-          setAppointments((prevAppointments) =>
-            prevAppointments.filter((appointment) => appointment.id !== id)
-          );
-          console.log(`Appointment with ID ${id} deleted successfully.`);
-        } catch (error) {
-          console.error("Error deleting appointment:", error);
-        }
+  const handleDelete = async (id) => {
+    if (window.confirm("Are you sure you want to delete this appointment?")) {
+      try {
+        await deleteAppointment(id);
+        setAppointments((prevAppointments) =>
+          prevAppointments.filter((appointment) => appointment.id !== id)
+        );
+        console.log(`Appointment with ID ${id} deleted successfully.`);
+      } catch (error) {
+        console.error("Error deleting appointment:", error);
       }
-    };
+    }
+  };
 
     return (
-      <div className="p-6 bg-gray-100 min-h-screen">
-        <Navbar userRole={userRole} />
-        <Routes>
-          <Route 
-            path="/"
-            element={
-              <ClientDashboard
-                onCreateAppointment={() => setModalOpen(true)} // Open modal for new appointment
-                onEdit={(appointment) => {
-                  setCurrentAppointment(appointment);
-                  setModalOpen(true);
-                }}
-                onDelete={handleDelete}
-                appointments={appointments} // Pass appointments
-              />
-            }
-        />
-        <Route
-            path="/client-dashboard"
-            element={
-              <ClientDashboard
-                onCreateAppointment={() => setModalOpen(true)}
-                onEdit={(appointment) => {
-                  setCurrentAppointment(appointment);
-                  setModalOpen(true);
-                }}
-                onDelete={handleDelete}
-                appointments={appointments}
-              />
-            }
+        <div className="p-0 bg-gray-100 min-h-screen">
+          <Navbar userRole={userRole} />
+          <Routes>
+            <Route
+              path="/*"
+              element={<HomePage user={user} appointments={appointments} />}
+            />
+            <Route
+              path="/client-dashboard"
+              element={
+                <>
+                  {console.log("Props passed to ClientDashboard:", {
+                    onCreateAppointment: handleCreateAppointment,
+                    onEdit: (appointment) => {
+                      setCurrentAppointment(appointment);
+                      setModalOpen(true);
+                    },
+                    onDelete: handleDelete,
+                    appointments,
+                })}
+                <ClientDashboard
+                  onCreateAppointment={handleCreateAppointment}
+                  onEdit={(appointment) => {
+                    setCurrentAppointment(appointment);
+                    setModalOpen(true);
+                  }}
+                  onDelete={handleDelete}
+                  appointments={appointments}
+                />
+              </>
+              }
+            />
+          </Routes>
+          <Modal
+            isOpen={isModalOpen}
+            onClose={() => setModalOpen(false)}
+            appointment={currentAppointment}
+            onSave={(updatedAppointment) => {
+              if (!updatedAppointment.id) {
+                createAppointment(updatedAppointment).then((newAppt) =>
+                  setAppointments((prev) => [...prev, newAppt])
+                );
+              }
+            }}
           />
-        </Routes>
-        <Modal
-          isOpen={isModalOpen}
-          onClose={closeModal}
-          appointment={currentAppointment}
-          onSave={handleSave}
-        />
-        <Footer />
-      </div>
+          <Footer />
+        </div>
     );
   }
   
