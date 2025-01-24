@@ -1,0 +1,79 @@
+/* General */
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f8f9fa;
+  }
+  
+  /* Navbar */
+  .navbar {
+    background: linear-gradient(to right, #3b82f6, #2563eb);
+    color: white;
+    padding: 16px 24px;
+  }
+  
+  .navbar .brand {
+    font-size: 24px;
+    font-weight: bold;
+  }
+  
+  .navbar button {
+    background: #ef4444;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    transition: background 0.2s;
+  }
+  
+  .navbar button:hover {
+    background: #dc2626;
+  }
+  
+  /* Header */
+  h1 {
+    font-size: 32px;
+    font-weight: bold;
+    margin-bottom: 16px;
+    color: #1e3a8a;
+    text-align: center;
+  }
+  
+  /* Appointment Card */
+  .card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  
+  .card h2 {
+    font-size: 18px;
+    font-weight: bold;
+  }
+  
+  .card button {
+    margin-right: 8px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    transition: transform 0.1s;
+  }
+  
+  .card button:hover {
+    transform: scale(1.05);
+  }
+  
+  /* FullCalendar Event Styles */
+  .fc-event {
+    background-color: #3b82f6 !important; /* Default blue background */
+    color: white !important; /* White text */
+    border: none !important; /* Remove border */
+    border-radius: 4px !important; /* Rounded corners */
+    transition: all 0.3s ease !important; /* Smooth transitions */
+    cursor: pointer !important; /* Indicate clickable */
+  }
+  
+  .fc-event:hover {
+    transform: scale(1.05) !important; /* Slightly enlarge on hover */
+    background-color: #2563eb !important; /* Darker blue background */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2) !important; /* Add shadow */
+  }
