@@ -48,7 +48,7 @@ const AppRoutes = () => {
       />
 
       {/* Debugging: Fallback route */}
-      <Route path="*" element={<h1>Route Not Found</h1>} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 };
