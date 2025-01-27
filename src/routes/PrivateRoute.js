@@ -8,27 +8,31 @@ const PrivateRoute = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      console.log("Auth State Changed:", currentUser); // Debugging
-      setUser(currentUser);
-      setLoading(false); // Stop loading once we know the auth state
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (!currentUser) {
+        console.warn("No user authenticated. Redirecting to login.");
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const token = await currentUser.getIdToken(true);
+        setUser({ token });
+      } catch (error) {
+        console.error("Error with authentication:", error);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
     });
 
-    return () => unsubscribe(); // Cleanup listener on unmount
+    return () => unsubscribe();
   }, []);
 
-  // Show a loading indicator while determining the auth state
-  if (loading) {
-    return <p>Loading...</p>;
-  }
+  if (loading) return <p>Loading...</p>;
 
-  // Log user state for debugging
-  console.log("User in PrivateRoute:", user);
-  console.log("Loading in PrivateRoute:", loading);
-
-  // If user is authenticated, render the children; otherwise, redirect to login
   if (!user) {
-    console.error("User not authenticated!");
     return <Navigate to="/login" />;
   }
 
