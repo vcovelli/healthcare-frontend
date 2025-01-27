@@ -1,34 +1,22 @@
 import React from "react";
 import ReactDOM from "react-dom/client"; // React 18 import
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router } from "react-router-dom";
 import "./styles/output.css"; // Tailwind CSS
-import './styles/styles.css';
+import "./styles/styles.css";
 import App from "./App";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import ClientDashboard from "./pages/ClientDashboard"; // Import ClientDashboard
-import PrivateRoute from "./routes/PrivateRoute"; // Import PrivateRoute
-import NotFound from "./pages/NotFound";
+import { AuthProvider } from "./context/AuthContext"; // Authentication context
+import { AppointmentsProvider } from "./context/AppointmentsContext"; // Appointments context
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
 root.render(
   <React.StrictMode>
-    <Router>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/client-dashboard" element={<ClientDashboard />} /> {/* Directly test ClientDashboard */}
-        <Route
-          path="/"
-          element={
-            <PrivateRoute>
-              <App />
-            </PrivateRoute>
-          }
-        />
-        <Route path="*" element={<NotFound />} />  
-      </Routes>
-    </Router>
+    <AuthProvider>
+      <AppointmentsProvider>
+        <Router>
+          <App />
+        </Router>
+      </AppointmentsProvider>
+    </AuthProvider>
   </React.StrictMode>
 );
