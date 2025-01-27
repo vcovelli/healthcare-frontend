@@ -2,18 +2,20 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
 import axios from "axios";
+import apiClient from "./apiClient";
 
 export const getUserRole = async (token) => {
-  const response = await axios.post(
-    "http://127.0.0.1:8000/api/auth/role/",
-    {},
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+  try {
+    console.log("Sending token to backend:", token);
+    const response = await apiClient.post("auth/role/", {}, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    console.log("Role fetched from backend:", response.data.role);
     return response.data.role;
+  } catch (error) {
+    console.error("Error fetching user role:", error.response?.data || error.message);
+    throw error;
+  }
 };
 
 // https://firebase.google.com/docs/web/setup#available-libraries
