@@ -28,4 +28,19 @@ apiClient.interceptors.request.use(
   }
 );
 
+export const getUserRole = async (token) => {
+  let retries = 3
+  while (retries > 0) {
+      try {
+      const response = await apiClient.post("auth/role/", {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return response.data.role;
+    } catch (error) {
+      retries--;
+      if (retries === 0) throw error;
+    }
+  }
+};
+
 export default apiClient;
