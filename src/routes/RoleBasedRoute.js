@@ -1,38 +1,20 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Navigate } from "react-router-dom";
-import { auth, getUserRole } from "../api/firebaseConfig";
+import { useAuth } from "../context/AuthContext";
 
 const RoleBasedRoute = ({ children, allowedRoles }) => {
-  const [role, setRole] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { role, loading } = useAuth();
 
-  useEffect(() => {
-    const fetchRole = async () => {
-      try {
-        const token = await auth.currentUser.getIdToken();
-        console.log("Auth Token:", token); // Debugging token
-        const fetchedRole = await getUserRole(token);
-        console.log("Fetched Role:", fetchedRole); // Debugging role
-        setRole(fetchedRole);
-      } catch (error) {
-        console.error("Error fetching role:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Show a loading spinner while fetching the role
+  if (loading) return <p>Loading...</p>;
 
-    fetchRole();
-  }, []);
-
-  if (loading) {
-    return <p>Loading...</p>; // Show loading spinner
-  }
-
+  // Check if user's role matches allowed roles
   if (!allowedRoles.includes(role)) {
-    return <Navigate to="/" />; // Redirect if not authorized
+    console.warn(`Unauthorized access attempt. Role: ${role}`);
+    return <Navigate to="/" />;
   }
 
-  return children; // Render child components if authorized
+    return children;
 };
 
 export default RoleBasedRoute;
