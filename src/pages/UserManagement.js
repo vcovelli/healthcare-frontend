@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { auth } from "./firebaseConfig";
+import { auth } from "../api/firebaseConfig";
 
 const UserManagement = () => {
   const [formData, setFormData] = useState({

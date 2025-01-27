@@ -123,9 +123,9 @@ const ClientDashboard = ({ appointments = [], onCreateAppointment, businessHours
     }
 
     const appointmentDetails = {
-      title,  // Required title
-      date: selectedDate,         // Ensure date is in 'YYYY-MM-DD' format
-      time: selectedTime.replace(" AM", "").replace(" PM", ""), // Convert 12-hour to 24-hour format
+      title: title.trim(),
+      date: new Date(selectedDate).toISOString().split("T")[0], // Ensure YYYY-MM-DD format
+      time: convertTimeTo24Hour(selectedTime), // Ensure 24-hour format for time
   };
 
     try {

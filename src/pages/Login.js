@@ -2,9 +2,11 @@ import React, { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../api/firebaseConfig";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import apiClient from "../api/apiClient";
 
 const Login = () => {
+  const { setRole } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -18,26 +20,19 @@ const Login = () => {
     setError("");
 
     try {
-      // Sign in the user with Firebase Authentication
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password); // Sign in the user with Firebase Authentication
+      const user = userCredential.user; // Get the logged-in user from the userCredential
 
-      // Get the logged-in user from the userCredential
-      const user = userCredential.user;
-
-      // Check the updated email verification status
-      if (!user.emailVerified) {
-        setError("Please verify your email before logging in.");
-        setLoading(false);
-        return;
+      if (!user.emailVerified) { // Check the updated email verification status
+        throw new Error("Email not verified.");
       }
 
-      // Force refresh the ID token to get the latest email verification status
-      const token = await user.getIdToken(true);
+      const token = await user.getIdToken(true); // Force refresh the ID token to get the latest email verification status
       localStorage.setItem("authToken", token);
       console.log("Firebase Token:", token);
 
-      // Send the token to the backend for verification
-      const response = await apiClient.post("auth/login/", {}, {
+      
+      const response = await apiClient.post("auth/login/", {}, { // Send the token to the backend for verification
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -45,6 +40,7 @@ const Login = () => {
 
       // Extract role from the backend response
       const { role } = response.data; // Get the role from the response
+      setRole(role); // Update the role in AuthContext
       // Store role in localStorage or a state management solution
       localStorage.setItem("userRole", role);
 
@@ -61,9 +57,14 @@ const Login = () => {
       } else {
         setError("Unexpected user role. Please contact support.");
       }
-    } catch(err) {
-      console.error("Backend Error:", error.response?.data || error.message);
-      setError("Login failed. Please check your credentials and try again.");
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.detail ||
+        err.response?.data?.error ||
+        err.message ||
+        "Login failed. Please try again.";
+      console.error("Error during login:", errorMessage);
+      setError(errorMessage)
     } finally {
       setLoading(false);
     }
