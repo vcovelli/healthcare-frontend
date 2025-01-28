@@ -1,5 +1,6 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+import Home from "../pages/HomePage";
 import Login from "../pages/Login";
 import Signup from "../pages/Signup";
 import AdminDashboard from "../pages/AdminDashboard";
@@ -11,14 +12,30 @@ import PrivateRoute from "./PrivateRoute";
 import RoleBasedRoute from "./RoleBasedRoute";
 
 const AppRoutes = () => {
+  const role = localStorage.getItem("userRole");
+
   return (
     <Routes>
-      {/* Public Routes */}
-      <Route path="/" element={<Navigate to="/login" replace />} />
+      {/* Root Route */}
+      <Route
+        path="/"
+        element={
+          role ? (
+            <Navigate to={`/${role}-dashboard`} replace />
+          ) : (
+            <Navigate to="/home" replace />
+          )
+        }
+      />
+
+      {/* Home Route */}
+      <Route path="/home" element={<Home />} />
+
+      {/* Login/Signup Routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
 
-      {/* Protected Routes */}
+      {/* Role-Specific Routes */}
       <Route
         path="/admin-dashboard"
         element={
@@ -33,7 +50,7 @@ const AppRoutes = () => {
         path="/client-dashboard"
         element={
           <PrivateRoute>
-            <RoleBasedRoute allowedRoles={["client"]}>
+            <RoleBasedRoute allowedRoles={["client", "staff", "admin"]}>
               <ClientDashboard />
             </RoleBasedRoute>
           </PrivateRoute>
@@ -60,8 +77,8 @@ const AppRoutes = () => {
         }
       />
 
-      {/* Fallback Route */}
-      <Route path="*" element={<NotFound />} />
+      {/* Catch-all for unknown routes */}
+      <Route path="*" element={<Navigate to="/home" replace />} />
     </Routes>
   );
 };
