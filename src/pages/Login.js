@@ -4,6 +4,7 @@ import { auth } from "../api/firebaseConfig";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import apiClient from "../api/apiClient";
+import { getAuthToken } from "../utils/authUtils";
 
 const Login = () => {
   const { setRole } = useAuth();
@@ -27,15 +28,14 @@ const Login = () => {
         throw new Error("Email not verified.");
       }
 
-      const token = await user.getIdToken(true); // Force refresh the ID token to get the latest email verification status
+      const token = await getAuthToken(); // Force refresh the ID token to get the latest email verification status
       localStorage.setItem("authToken", token);
       console.log("Firebase Token:", token);
 
       
-      const response = await apiClient.post("auth/login/", {}, { // Send the token to the backend for verification
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const response = await apiClient.post("/auth/login/", {
+        email,
+        password,
       });
 
       // Extract role from the backend response
@@ -55,7 +55,7 @@ const Login = () => {
       } else if (role === "staff") {
         navigate("/staff-dashboard");
       } else {
-        setError("Unexpected user role. Please contact support.");
+        throw new Error("Unexpected user role. Please contact support.");
       }
     } catch (err) {
       const errorMessage =
