@@ -39,7 +39,7 @@ const Navbar = () => {
     <nav className="bg-gradient-to-r from-blue-600 to-blue-400 text-white shadow-md fixed top-0 left-0 w-full z-50">
       <div className="container mx-auto flex justify-between items-center px-6 py-4">
         {/* Logo */}
-        <Link to="/" className="text-2xl font-bold hover:text-gray-200">
+        <Link to="/home" className="text-2xl font-bold hover:text-gray-200">
           Healthcare Scheduler
         </Link>
 
