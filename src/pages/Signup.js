@@ -38,8 +38,8 @@ const Signup = () => {
 
       // Send data to backend
       //console.log("Preparing to send request to backend...");
-      //await axios.post(
-      //  "http://127.0.0.1:8000/api/profiles/create/", 
+      //await .post(
+      //  "/profiles/create/", 
       //{ role, email, password }, 
       //{
       //  headers: {
