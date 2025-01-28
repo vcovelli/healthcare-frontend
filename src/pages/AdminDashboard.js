@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-import { auth } from "../api/firebaseConfig";
+import apiClient from "../api/apiClient";
 import Navbar from "../components/Navbar";
+import { getAuthToken } from "../utils/authUtils";
 
 const AdminDashboard = () => {
   const [profiles, setProfiles] = useState([]);
@@ -11,11 +11,11 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = await auth.currentUser.getIdToken();
+        const token = await getAuthToken();
 
         // Fetch profiles
-        const profileResponse = await axios.get(
-          "http://127.0.0.1:8000/api/profiles/",
+        const profileResponse = await apiClient.get(
+          "/profiles/",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -26,8 +26,8 @@ const AdminDashboard = () => {
         setProfiles(Array.isArray(profileResponse.data) ? profileResponse.data : []); // Fallback to an empty array
 
         // Fetch appointments
-        const appointmentResponse = await axios.get(
-          "http://127.0.0.1:8000/api/appointments/",
+        const appointmentResponse = await apiClient.get(
+          "/appointments/",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -47,8 +47,8 @@ const AdminDashboard = () => {
   const handleDeleteProfile = async (id) => {
     if (!window.confirm("Are you sure you want to delete this profile?")) return;
     try {
-      const token = await auth.currentUser.getIdToken();
-      await axios.delete(`http://127.0.0.1:8000/api/profiles/${id}/`, {
+      const token = await getAuthToken();
+      await apiClient.delete(`/profiles/${id}/`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -64,8 +64,8 @@ const AdminDashboard = () => {
   const handleDeleteAppointment = async (id) => {
     if (!window.confirm("Are you sure you want to delete this appointment?")) return;
     try {
-      const token = await auth.currentUser.getIdToken();
-      await axios.delete(`http://127.0.0.1:8000/api/appointments/${id}/`, {
+      const token = await getAuthToken();
+      await apiClient.delete(`/appointments/${id}/`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

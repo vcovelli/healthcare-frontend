@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, getUserRole } from "../api/firebaseConfig";
+import { getAuthToken } from "../utils/authUtils";
 
 const AuthContext = createContext();
 
@@ -16,7 +17,7 @@ export const AuthProvider = ({ children }) => {
       if (currentUser) {
         setUser(currentUser);
         try {
-          const token = await currentUser.getIdToken(true); // Force token refresh
+          const token = await getAuthToken(); // Force token refresh
           const fetchedRole = await getUserRole(token);
           setRole(fetchedRole); // Store the role in context
           console.log("Role fetched from backend:", fetchedRole);
