@@ -1,13 +1,13 @@
-import axios from "axios";
-import { auth } from "./firebaseConfig";
+import apiClient from "../api/apiClient";
+import { getAuthToken } from "../utils/authUtils";
 
 // Function to create an appointment
 export const createAppointment = async (appointmentData) => {
   try {
-    const token = await auth.currentUser.getIdToken(); // Get Firebase token
+    const token = await getAuthToken(); // Get Firebase token
     console.log("Auth Token (Create):", token);
 
-    const response = await axios.post("http://127.0.0.1:8000/api/appointments/", appointmentData, {
+    const response = await apiClient.post("/appointments/", appointmentData, {
       headers: {
         Authorization: `Bearer ${token}`, // Attach token
       },
@@ -22,14 +22,14 @@ export const createAppointment = async (appointmentData) => {
 // Function to fetch all appointments for the logged-in user
 export const fetchAppointments = async () => {
   try {
-    const token = localStorage.getItem("authToken") || (await auth.currentUser?.getIdToken());
+    const token = await getAuthToken();
     console.log("Auth Token (Fetch):", token);
 
     if (!token) {
       throw new Error("Token is required to fetch appointments.");
     }
 
-    const response = await axios.get("http://127.0.0.1:8000/api/appointments/", {
+    const response = await apiClient.get("/appointments/", {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -44,11 +44,11 @@ export const fetchAppointments = async () => {
 // Function to delete an appointment by ID
 export const deleteAppointment = async (id) => {
   try {
-    const token = await auth.currentUser.getIdToken(); // Get Firebase token
+    const token = await getAuthToken(); // Get Firebase token
     console.log("Auth Token (Delete):", token);
     console.log("Deleting Appointment ID:", id);
 
-    const response = await axios.delete(`http://127.0.0.1:8000/api/appointments/${id}/`, {
+    const response = await apiClient.delete(`/appointments/${id}/`, {
       headers: {
         Authorization: `Bearer ${token}`, // Attach token
       },
@@ -63,10 +63,10 @@ export const deleteAppointment = async (id) => {
 // Function to update an appointment by ID
 export const updateAppointment = async (id, updatedData) => {
   try {
-    const token = await auth.currentUser.getIdToken(); // Get Firebase token
+    const token = await getAuthToken(); // Get Firebase token
     console.log("Auth Token (Update):", token);
 
-    const response = await axios.put(`http://127.0.0.1:8000/api/appointments/${id}/`, updatedData, {
+    const response = await apiClient.put(`/appointments/${id}/`, updatedData, {
       headers: {
         Authorization: `Bearer ${token}`, // Attach token
       },
