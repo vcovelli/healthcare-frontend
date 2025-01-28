@@ -9,6 +9,7 @@ import Footer from "../components/Footer";
 import Header from "../components/Header";
 import { saveAppointment, fetchAppointments, updateAppointment, deleteAppointment } from '../api/appointmentsAPI.js';
 import { formatTime24to12, formatDateToMMDDYYYY, convertTimeTo24Hour } from "../utils/formatDate";
+import { getAuthToken } from "../utils/authUtils";
 
 Modal.setAppElement('#root');
 
@@ -24,7 +25,7 @@ const ClientDashboard = ({ appointments = [], onCreateAppointment, businessHours
   useEffect(() => {
     const loadAppointments = async () => {
       try {
-        const token = localStorage.getItem("authToken");
+        const token = getAuthToken();
         if (!token) throw new Error("You must log in to view appointments.");
 
         const result = await fetchAppointments();

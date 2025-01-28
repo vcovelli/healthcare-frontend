@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-import { auth } from "../api/firebaseConfig";
+import apiClient from "../api/apiClient";
 import Navbar from "../components/Navbar";
 import DatePicker from "react-datepicker"; // Install react-datepicker
 import "react-datepicker/dist/react-datepicker.css";
+import { getAuthToken } from "../utils/authUtils";
 
 const StaffDashboard = () => {
   const [appointments, setAppointments] = useState([]);
@@ -14,9 +14,9 @@ const StaffDashboard = () => {
     const fetchAppointments = async () => {
       setLoading(true);
       try {
-        const token = await auth.currentUser.getIdToken();
-        const response = await axios.get(
-          `http://127.0.0.1:8000/api/appointments?date=${selectedDate.toISOString().split("T")[0]}`,
+        const token = await getAuthToken();
+        const response = await apiClient.get(
+          `/appointments?date=${selectedDate.toISOString().split("T")[0]}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

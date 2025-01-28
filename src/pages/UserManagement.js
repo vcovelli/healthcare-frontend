@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import axios from "axios";
-import { auth } from "../api/firebaseConfig";
+import apiClient from "../api/apiClient";
+import { getAuthToken } from "../utils/authUtils";
 
 const UserManagement = () => {
   const [formData, setFormData] = useState({
@@ -19,9 +19,9 @@ const UserManagement = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const token = await auth.currentUser.getIdToken();
-      const response = await axios.post(
-        "http://127.0.0.1:8000/api/profiles/",
+      const token = await getAuthToken();
+      await apiClient.post(
+        "/profiles/",
         formData,
         {
           headers: { Authorization: `Bearer ${token}` },
