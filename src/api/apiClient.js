@@ -1,9 +1,10 @@
 import axios from "axios";
 import { auth } from "./firebaseConfig"; // Adjust path if needed
+import { getAuthToken } from "../utils/authUtils";
 
 // Create an Axios instance with default settings
 const apiClient = axios.create({
-  baseURL: "http://127.0.0.1:8000/api/", // Backend API base URL
+  baseURL: process.env.REACT_APP_BACKEND_URL,
   headers: {
     "Content-Type": "application/json",
   },
@@ -15,7 +16,7 @@ apiClient.interceptors.request.use(
     try {
       const currentUser = auth.currentUser; // Get the currently signed-in user
       if (currentUser) {
-        const token = await currentUser.getIdToken(true); // Get a fresh Firebase token
+        const token = await getAuthToken(); // Get a fresh Firebase token
         config.headers.Authorization = `Bearer ${token}`;
       }
     } catch (error) {
