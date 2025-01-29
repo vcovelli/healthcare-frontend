@@ -217,7 +217,14 @@ const ClientDashboard = ({ appointments = [], onCreateAppointment, businessHours
             </h2>
             <div className="space-y-4">
               {appointmentList.length > 0 ? (
-                appointmentList.map((appt, index) => (
+                appointmentList
+                .slice() // Create a shallow copy of the array
+                .sort((a, b) => {
+                  const dateA = new Date(`${a.date}T${a.time}`);
+                  const dateB = new Date(`${b.date}T${b.time}`);
+                  return dateA - dateB; // Sort chronologically
+                })
+                .map((appt, index) => (
                   <div
                     key={index}
                     className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition duration-300"
