@@ -23,7 +23,7 @@ const CompleteProfile = () => {
 
       try {
         const token = await user.getIdToken();
-        const response = await apiClient.get("/auth/profile/", {
+        const response = await apiClient.get("/auth/profile/detail/", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -54,8 +54,7 @@ const CompleteProfile = () => {
 
     try {
       const token = await user.getIdToken();
-      const userId = user.uid;
-      await apiClient.put(`/auth/profile/update/${userId}/`, 
+      await apiClient.put(`/auth/profile/update/`, 
         { ...formData, profile_completed: true },
         { headers: { Authorization: `Bearer ${token}` } }
       );
