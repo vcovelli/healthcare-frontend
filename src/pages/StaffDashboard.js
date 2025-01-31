@@ -28,9 +28,13 @@ const StaffDashboard = () => {
         // Map appointments into FullCalendar event format
         const events = response.data.map((appointment) => ({
           id: appointment.id,
-          title: appointment.title,
+          title: `${appointment.title} (${appointment.client.first_name} ${appointment.client.last_name})`,
           start: `${appointment.date}T${appointment.time}`,
           end: `${appointment.date}T${appointment.time}`, // Add duration
+          extendedProps: {
+            clientEmail: appointment.client.email,
+            clientPhone: appointment.client.phone_number,
+          },
         }));
         setAppointments(events);
       } catch (error) {
