@@ -51,14 +51,20 @@ const CompleteProfile = () => {
       console.error("User is not logged in");
       return;
     }
-
+  
     try {
       const token = await user.getIdToken();
-      await apiClient.put(`/users/profile/update/`, 
-        { ...formData, profile_completed: true },
+      await apiClient.patch(
+        `/users/profile/update/`,
+        {
+          first_name: formData.first_name.trim(),
+          last_name: formData.last_name.trim(),
+          phone_number: formData.phone_number.trim(),
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
+  
+      alert("Profile updated successfully!");
       navigate("/client-dashboard");
     } catch (error) {
       console.error("Error updating profile:", error);
