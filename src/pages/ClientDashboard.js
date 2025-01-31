@@ -147,7 +147,11 @@ const ClientDashboard = ({ appointments = [], onCreateAppointment, businessHours
       return;
     }
 
-    const newAppointment = { date: selectedDate, time: selectedTime };
+    const newAppointment = {
+      title: selectedTitle,
+      appointment_date: selectedDate,
+      time: selectedTime,
+    };
     console.log("New appointment:", newAppointment);
 
     handleSaveAppointment(); // Call the save function
