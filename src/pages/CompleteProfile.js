@@ -54,7 +54,7 @@ const CompleteProfile = () => {
 
     try {
       const token = await user.getIdToken();
-      await apiClient.put(`/auth/profile/update/`, 
+      await apiClient.put(`/users/profile/update/`, 
         { ...formData, profile_completed: true },
         { headers: { Authorization: `Bearer ${token}` } }
       );
