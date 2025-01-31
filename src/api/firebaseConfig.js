@@ -3,17 +3,28 @@ import { initializeApp } from "firebase/app";
 import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
 import apiClient from "./apiClient";
 
-export const getUserRole = async (token) => {
+export const getUserRole = async () => {
   try {
-    console.log("Sending token to backend:", token);
-    const response = await apiClient.post("auth/role/", {}, {
+    const currentUser = auth.currentUser;
+    
+    if (!currentUser) {
+      console.error("No Firebase user found! Are you logged in?");
+      return null;
+    }
+
+    const token = await currentUser.getIdToken();  // Fetch token
+
+    console.log("Sending Firebase Token to Backend:", token);  // Debugging
+
+    const response = await apiClient.get("/auth/role/", {
       headers: { Authorization: `Bearer ${token}` },
     });
-    console.log("Role fetched from backend:", response.data.role);
+
+    console.log("User Role Response:", response.data);
     return response.data.role;
   } catch (error) {
-    console.error("Error fetching user role:", error.response?.data || error.message);
-    throw error;
+    console.error("Error fetching user role:", error);
+    return null;
   }
 };
 
