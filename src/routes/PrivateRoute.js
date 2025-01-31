@@ -3,10 +3,12 @@ import { Navigate } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../api/firebaseConfig";
 import { getAuthToken } from "../utils/authUtils";
+import apiClient from "../api/apiClient";
 
 const PrivateRoute = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [profileCompleted, setProfileCompleted] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -20,12 +22,21 @@ const PrivateRoute = ({ children }) => {
       try {
         // Attempt to get the token
         const token = await getAuthToken();
+        console.log("Sending Firebase Token:", token); // Debugging
 
         // Save the token in localStorage
         localStorage.setItem("authToken", token);
 
+        // Fetch user profile data from backend using `apiClient`
+        const response = await apiClient.get("/auth/profile/detail/", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        // Extract profile completion status
+        setProfileCompleted(response.data.profile_completed);
+
         // Update user state
-        setUser({ token });
+        setUser({ token, profileCompleted: response.data.profile_completed });
       } catch (error) {
         console.error("Error with authentication:", error);
         setUser(null);
@@ -43,6 +54,11 @@ const PrivateRoute = ({ children }) => {
   // Redirect to login if no user is authenticated
   if (!user) {
     return <Navigate to="/login" />;
+  }
+
+  // Redirect users to complete their profile if they haven't done so
+  if (!profileCompleted) {
+    return <Navigate to="/complete-profile" />;
   }
 
   // Allow access if user is authenticated

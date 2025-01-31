@@ -6,8 +6,8 @@ import Signup from "../pages/Signup";
 import AdminDashboard from "../pages/AdminDashboard";
 import StaffDashboard from "../pages/StaffDashboard";
 import ClientDashboard from "../pages/ClientDashboard";
-import UserManagement from "../pages/UserManagement"; // Fixed typo in the import
-import NotFound from "../pages/NotFound"; // Import a fallback 404 page
+import UserManagement from "../pages/UserManagement";
+import CompleteProfile from "../pages/CompleteProfile";
 import PrivateRoute from "./PrivateRoute";
 import RoleBasedRoute from "./RoleBasedRoute";
 
@@ -34,6 +34,7 @@ const AppRoutes = () => {
       {/* Login/Signup Routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
+      <Route path="/complete-profile" element={<CompleteProfile />} />
 
       {/* Role-Specific Routes */}
       <Route
