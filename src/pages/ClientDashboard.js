@@ -148,7 +148,7 @@ const ClientDashboard = ({ appointments = [], onCreateAppointment, businessHours
     }
 
     const newAppointment = {
-      title: selectedTitle,
+      title: title,
       appointment_date: selectedDate,
       time: selectedTime,
     };
