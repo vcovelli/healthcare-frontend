@@ -1,70 +1,107 @@
-# Getting Started with Create React App
+# Healthcare Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A React-based frontend application for managing healthcare appointments, including features like a calendar view, appointment creation, and editing functionalities.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## **Features**
 
-### `npm start`
+- **Appointment Management**: Create, view, edit, and delete appointments.
+- **Calendar Integration**: View appointments in a calendar interface.
+- **Role-Based Access**: Separate views for clients, staff, and admins.
+- **Responsive Design**: Optimized for desktop and mobile devices.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+---
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## **Setup Instructions**
 
-### `npm test`
+### **1. Clone the Repository**
+```bash
+git clone <repository-url>
+cd healthcare-frontend
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### **2. Install Dependencies**
+```bash
+npm install
+```
 
-### `npm run build`
+### **3. Set Up Environment Variables**
+Create a `.env` file in the root directory and add the required environment variables:
+```env
+REACT_APP_API_URL=<backend-api-url>
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### **4. Start the Development Server**
+```bash
+npm start
+```
+The app will be available at: [http://localhost:3000](http://localhost:3000)
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+---
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## **Project Structure**
 
-### `npm run eject`
+```
+.
+├── src
+│   ├── api          # API integration files (e.g., axios setup, endpoints)
+│   ├── components   # Reusable components (Navbar, Header, etc.)
+│   ├── pages        # Page-level components (ClientDashboard, AdminDashboard, etc.)
+│   ├── utils        # Utility functions (date formatting, authentication helpers)
+│   ├── App.js       # Main application component
+│   └── index.js     # Application entry point
+├── public
+│   ├── index.html   # HTML template
+│   └── favicon.ico  # Favicon
+└── package.json     # Project metadata and dependencies
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+---
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## **Technologies Used**
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+- **React**: Frontend library for building user interfaces.
+- **Tailwind CSS**: Utility-first CSS framework for responsive design.
+- **FullCalendar**: Calendar library for managing and displaying appointments.
+- **Axios**: HTTP client for API requests.
+- **Tippy.js**: Tooltip library for enhanced UI interactions.
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+---
 
-## Learn More
+## **Scripts**
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### **Start Development Server**
+```bash
+npm start
+```
+Runs the app in development mode.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### **Build for Production**
+```bash
+npm run build
+```
+Creates a production-ready build in the `build` folder.
 
-### Code Splitting
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## **Deployment**
 
-### Analyzing the Bundle Size
+This application can be deployed on platforms like **Vercel**, **Netlify**, or any static hosting service. Ensure the backend API URL is correctly configured in the `.env` file during deployment.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+---
 
-### Making a Progressive Web App
+## **Environment Variables**
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+Ensure the following variables are set in your environment:
 
-### Advanced Configuration
+- `REACT_APP_API_URL`: The base URL for the backend API.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+---
 
-### Deployment
+## **Notes**
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+- Always run `npm install` after pulling the latest changes to ensure dependencies are up to date.
+- For production builds, ensure that all required environment variables are correctly set.
+- Refer to the backend repository for API documentation and setup.
 
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
