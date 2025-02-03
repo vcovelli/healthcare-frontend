@@ -3,12 +3,22 @@ import { FiPlus } from "react-icons/fi";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
+import 'tippy.js/dist/tippy.css';
+import tippy from 'tippy.js';
 import Modal from 'react-modal';
 import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
 import Header from "../components/Header";
-import { saveAppointment, fetchAppointments, updateAppointment, deleteAppointment } from '../api/appointmentsAPI.js';
-import { formatTime24to12, formatDateToMMDDYYYY, convertTimeTo24Hour } from "../utils/formatDate";
+import ConfirmModal from "../components/ConfirmModal";
+import { saveAppointment,
+  fetchAppointments,
+  updateAppointment,
+  deleteAppointment
+} from '../api/appointmentsAPI.js';
+import { formatTime24to12,
+  formatDateToMMDDYYYY,
+  formatDateToYYYYMMDD,
+  convertTimeTo24Hour
+} from "../utils/formatDate";
 import { getAuthToken } from "../utils/authUtils";
 
 Modal.setAppElement('#root');
@@ -21,6 +31,9 @@ const ClientDashboard = ({ appointments = [], onCreateAppointment, businessHours
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState('');
   const [title, setTitle] = useState('');
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState(false);
+  const [appointmentToDelete, setAppointmentToDelete] = useState(null);
+  const [modalMessage, setModalMessage] = useState("");
 
   useEffect(() => {
     const loadAppointments = async () => {
@@ -29,8 +42,15 @@ const ClientDashboard = ({ appointments = [], onCreateAppointment, businessHours
         if (!token) throw new Error("You must log in to view appointments.");
 
         const result = await fetchAppointments();
-        setAppointmentList(result);
-        console.log("Appointments loaded:", result);
+        console.log("Raw Appointments Data:", result);
+
+        const formattedAppointments = result.map((appt) => ({
+          ...appt,
+          date: formatDateToMMDDYYYY(appt.appointment_date), // Convert to display format
+        }));
+        console.log("Formatted Appointments Data:", formattedAppointments);
+
+        setAppointmentList(formattedAppointments);
       } catch (err) {
         console.error("Error loading appointments:", err.message);
         setError(err.message);
@@ -55,16 +75,39 @@ const ClientDashboard = ({ appointments = [], onCreateAppointment, businessHours
     setIsModalOpen(false);
     setSelectedDate(null);
     setSelectedTime('');
+    setTitle('');
 
     // Ensure the page doesn't scroll after closing the modal
     document.activeElement?.blur();
+
+    // Prevent scrolling behavior
+    window.scrollTo({
+      top: window.pageYOffset, // Maintain the current scroll position
+      behavior: "auto",
+    });
   };
 
   const handleEditAppointment = (appointment) => {
+    console.log("Raw Appointment Data:", appointment);
+  
     setCurrentAppointment(appointment); // Track the current appointment being edited
-    setSelectedDate(formatDateToMMDDYYYY(appointment.date));  // Pre-fill the title in the modal
-    setSelectedTime(formatTime24to12(appointment.time));  // Pre-fill the date in the modal
-    setTitle(appointment.title);        // Pre-fill the time in the moda
+    setSelectedDate(formatDateToMMDDYYYY(appointment.appointment_date)); // Pre-fill the date in the modal
+  
+    if (appointment.time) {
+      try {
+        const formattedTime = formatTime24to12(appointment.time); // Ensure proper formatting
+        setSelectedTime(formattedTime);
+        console.log("Formatted Time:", formattedTime);
+      } catch (error) {
+        console.error("Error formatting time:", error);
+        setSelectedTime(''); // Reset if time parsing fails
+      }
+    } else {
+      console.warn("Invalid time found:", appointment.time);
+      setSelectedTime('');
+    }
+  
+    setTitle(appointment.title); // Pre-fill the title in the modal
     setIsModalOpen(true); // Open the modal
   };
   
@@ -74,7 +117,7 @@ const ClientDashboard = ({ appointments = [], onCreateAppointment, businessHours
     const updatedDetails = {
       id: currentAppointment.id, // Use the appointment ID for updating
       title: title.trim(),
-      date: new Date(selectedDate).toISOString().split("T")[0], // Convert back to YYYY-MM-DD
+      appointment_date: formatDateToYYYYMMDD(selectedDate), // Convert to backend format
       time: convertTimeTo24Hour(selectedTime), // Convert to 24-hour format
     };
 
@@ -87,7 +130,9 @@ const ClientDashboard = ({ appointments = [], onCreateAppointment, businessHours
       // Update the state with the edited appointment
       setAppointmentList((prev) =>
         prev.map((appt) =>
-          appt.id === currentAppointment.id ? { ...appt, ...updatedDetails } : appt
+          appt.id === currentAppointment.id
+            ? { ...appt, ...updatedDetails, date: formatDateToMMDDYYYY(updatedDetails.date) } // Display format
+            : appt
         )
       );
   
@@ -98,26 +143,39 @@ const ClientDashboard = ({ appointments = [], onCreateAppointment, businessHours
     }
   };
 
-  const handleDeleteAppointment = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this appointment?")) {
-      return;
-    }
+  const handleDeleteRequest = (appointment) => {
+    setAppointmentToDelete(appointment);
+    setModalMessage(
+      `Are you sure you want to delete the appointment "${appointment.title}" scheduled for ${formatDateToMMDDYYYY(
+        appointment.date
+      )} at ${formatTime24to12(appointment.time)}?`
+    );
+    setDeleteConfirmModal(true);
+  };  
   
+  const confirmDelete = async () => {
+    if (!appointmentToDelete) return;
+    
     try {
-      await deleteAppointment(id);
-      console.log("Appointment deleted:", id);
-  
-      // Remove the deleted appointment from the state
-      setAppointmentList((prev) => prev.filter((appt) => appt.id !== id));
+      await deleteAppointment(appointmentToDelete.id);
+      console.log("Appointment deleted:", appointmentToDelete);
+    
+      // Remove deleted appointment from the state
+      setAppointmentList((prev) => 
+        prev.filter((appt) => appt.id !== appointmentToDelete.id)
+      );
     } catch (error) {
       console.error("Error deleting appointment:", error.message || error.response);
-      alert("Failed to delete appointment. Please try again.");
+    } finally {
+      setDeleteConfirmModal(false);
+      setAppointmentToDelete(null);
     }
   };
 
   const handleSaveAppointment = async () => {
     console.log("Selected Date:", selectedDate);
     console.log("Selected Time:", selectedTime);
+
     if (!selectedDate || !selectedTime) {
       alert('Please select a date and time.');
       return;
@@ -125,15 +183,20 @@ const ClientDashboard = ({ appointments = [], onCreateAppointment, businessHours
 
     const appointmentDetails = {
       title: title.trim(),
-      appointment_date: new Date(selectedDate).toISOString().split("T")[0], // Ensure YYYY-MM-DD format
+      appointment_date: formatDateToYYYYMMDD(selectedDate), // Convert to backend format
       time: convertTimeTo24Hour(selectedTime), // Ensure 24-hour format for time
   };
 
     try {
       const result = await saveAppointment(appointmentDetails);
       console.log('Appointment saved successfully:', result);
-      alert('Appointment saved successfully!');
-      setAppointmentList((prev) => [...prev, result]); // Add the new appointment to the local state
+
+      const formattedAppointment = {
+        ...result,
+        date: formatDateToMMDDYYYY(result.appointment_date), // Format for display
+      };
+
+      setAppointmentList((prev) => [...prev, formattedAppointment]);
       closeModal(); // Close the modal after saving
     } catch (error) {
       console.error('Error saving appointment:', error.message || error.response);
@@ -169,10 +232,17 @@ const ClientDashboard = ({ appointments = [], onCreateAppointment, businessHours
     });
 
     const bookedSlots = appointments
-      .filter((appt) => appt.date === selectedDate)
+      .filter((appt) => appt.appointment_date === selectedDate)
       .map((appt) => appt.time);
 
     return allSlots.filter((slot) => !bookedSlots.includes(slot));
+  };
+
+  const getISODateTime = (date, time) => {
+    const [hours, minutes, seconds] = time.split(':').map(Number);
+    const dateObject = new Date(date);
+    dateObject.setHours(hours, minutes, seconds || 0); // Set hours, minutes, and seconds
+    return dateObject.toISOString(); // Convert to ISO string
   };
 
   return (
@@ -188,30 +258,73 @@ const ClientDashboard = ({ appointments = [], onCreateAppointment, businessHours
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Calendar Section */}
           <div className="lg:w-7/12 bg-white shadow-lg rounded-xl p-5">
-            <FullCalendar
-              plugins={[dayGridPlugin, interactionPlugin]}
-              initialView="dayGridMonth"
-              height="450px"
-              contentHeight="auto"
-              events={appointmentList.map((appt) => ({
-                id: appt.id,
-                title: appt.title,
-                start: appt.date,
-                time: appt.time, // Pass time for editing
-                extendedProps: { ...appt }, // Pass all details for editing
-              }))}
-              dateClick={(info) => {
-                if (info.dateStr >= today) openModal(info.dateStr); // For new appointments
-              }}
-              eventClick={(info) => handleEditAppointment(info.event.extendedProps)} // For existing appointments
-              eventClassNames="fc-event" // Assign the class explicitly if needed
-              dayCellClassNames={({ date }) => {
-                const dateStr = date.toISOString().split("T")[0];
-                return dateStr < today
-                  ? "bg-gray-300 cursor-not-allowed"
-                  : "cursor-pointer hover:bg-blue-200 transition";
-              }}
-            />
+          <FullCalendar
+            plugins={[dayGridPlugin, interactionPlugin]}
+            initialView="dayGridMonth"
+            height="450px"
+            contentHeight="auto"
+            events={
+              [...appointmentList] // Create a copy to avoid mutating state
+                .sort((a, b) => {
+                  const timeA = new Date(getISODateTime(a.appointment_date, convertTimeTo24Hour(a.time))).getTime();
+                  const timeB = new Date(getISODateTime(b.appointment_date, convertTimeTo24Hour(b.time))).getTime();
+                  return timeA - timeB; // Sort by datetime (date + time)
+                })
+                .map((appt) => ({
+                  id: appt.id,
+                  title: appt.title,
+                  start: getISODateTime(appt.appointment_date, convertTimeTo24Hour(appt.time)), // Use combined ISO datetime
+                  extendedProps: {
+                    time: formatTime24to12(appt.time), // Format time to 12-hour format
+                  },
+                }))
+            }
+            dateClick={(info) => {
+              if (info.dateStr >= today) openModal(info.dateStr); // For new appointments
+            }}
+            eventClick={(info) => {
+              const { title, start, extendedProps } = info.event;
+              handleEditAppointment({
+                title,
+                appointment_date: start.toISOString(),
+                time: extendedProps.time, // Use the time stored in extendedProps
+              });
+            }}
+            eventContent={(eventInfo) => {
+              // Dynamically trim the title based on the available width
+              const trimTitle = (text, maxLength) =>
+                text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+
+              const titleMaxLength = 10; // Default value, can be adjusted dynamically
+              return (
+              <div>
+                <div className="text-sm font-bold">{trimTitle(eventInfo.event.title, titleMaxLength)}</div>
+                <div className="text-xs text-gray-200">
+                  {eventInfo.event.extendedProps.time}
+                </div>
+              </div>
+              );
+            }}
+            eventDidMount={(info) => {
+              tippy(info.el, {
+                content: `${info.event.title}<br>${info.event.extendedProps.time}`, // Tooltip content
+                allowHTML: true, // Allow HTML for line breaks
+                theme: 'custom', // Custom theme name (you can set more themes if needed)
+                placement: "top", // Tooltip placement
+                animation: "scale", // Tooltip animation
+                duration: [200, 0], // Animation duration [show, hide]
+              });
+            }}
+            dayCellClassNames={({ date }) => {
+              const dateStr = date.toISOString().split("T")[0];
+              return dateStr === today
+                ? "bg-blue-100 text-blue-700 font-bold"
+                : dateStr < today
+                ? "bg-gray-300 cursor-not-allowed"
+                : "cursor-pointer hover:bg-blue-200 transition";
+            }}
+            eventClassNames="fc-event"
+          />
           </div>
 
           {/* Appointments Section */}
@@ -221,12 +334,11 @@ const ClientDashboard = ({ appointments = [], onCreateAppointment, businessHours
             </h2>
             <div className="space-y-4">
               {appointmentList.length > 0 ? (
-                appointmentList
-                .slice() // Create a shallow copy of the array
+                [...appointmentList]
                 .sort((a, b) => {
-                  const dateA = new Date(`${a.date}T${a.time}`);
-                  const dateB = new Date(`${b.date}T${b.time}`);
-                  return dateA - dateB; // Sort chronologically
+                  const dateTimeA = new Date(`${a.appointment_date.substring(0, 10)}T${a.time}`).getTime();
+                  const dateTimeB = new Date(`${b.appointment_date.substring(0, 10)}T${b.time}`).getTime();
+                  return dateTimeA - dateTimeB; // Sort in ascending order
                 })
                 .map((appt, index) => (
                   <div
@@ -234,7 +346,7 @@ const ClientDashboard = ({ appointments = [], onCreateAppointment, businessHours
                     className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition duration-300"
                   >
                     <h3 className="text-base font-medium text-gray-900">{appt.title}</h3>
-                    <p className="text-sm text-gray-500">{formatDateToMMDDYYYY(appt.date)}</p>
+                    <p className="text-sm text-gray-500">{formatDateToMMDDYYYY(appt.appointment_date)}</p>
                     <p className="text-sm text-gray-500">@: {formatTime24to12(appt.time)}</p>
                     <div className="flex space-x-4">
                       <button
@@ -244,7 +356,7 @@ const ClientDashboard = ({ appointments = [], onCreateAppointment, businessHours
                         Edit
                       </button>
                       <button
-                        onClick={() => handleDeleteAppointment(appt.id)}
+                        onClick={() => handleDeleteRequest(appt)}
                         className="text-red-500 hover:text-red-700"
                       >
                         Delete
@@ -349,7 +461,24 @@ const ClientDashboard = ({ appointments = [], onCreateAppointment, businessHours
         </div>
       </Modal>
 
-      <Footer />
+      {/* Confirmation Modal for Deleting Appointments */}
+      <ConfirmModal
+          isOpen={deleteConfirmModal}
+          onClose={() => setDeleteConfirmModal(false)}
+          onConfirm={confirmDelete}
+          message={
+            <>
+              <p className="text-lg font-semibold text-gray-800">Are you sure you want to delete this appointment?</p>
+              <div className="mt-4">
+                <p><span className="font-bold">Title:</span> {appointmentToDelete?.title}</p>
+                <p><span className="font-bold">Date:</span> {appointmentToDelete ? formatDateToMMDDYYYY(appointmentToDelete.date) : 'Invalid Date'}</p>
+                <p><span className="font-bold">Time:</span> {appointmentToDelete ? formatTime24to12(appointmentToDelete.time) : 'Invalid Time'}</p>
+              </div>
+            </>
+          }
+          className="relative bg-white rounded-2xl shadow-xl max-w-sm w-full p-8 mx-auto z-50"
+          overlayClassName="fixed inset-0 bg-black/70 flex items-center justify-center z-40"
+        />
     </div>
   );
 };
