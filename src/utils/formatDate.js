@@ -1,11 +1,27 @@
 // Format time to AM/PM
 export const formatTime24to12 = (time24) => {
-  if (!time24 || typeof time24 !== "string" || !time24.includes(":")) {
-    console.error("Invalid time:", time24);
-    return "Invalid time"; // Fallback for undefined or empty time
-  }  
-  
+  if (!time24 || typeof time24 !== "string") {
+    console.error("Invalid time input:", time24);
+    return "Invalid time";
+  }
+
+  // Check if the time is already in 12-hour format
+  if (time24.match(/(AM|PM)$/i)) {
+    return time24; // Return as is if it's already in 12-hour format
+  }
+
+  if (!time24.includes(":")) {
+    console.error("Invalid time format:", time24);
+    return "Invalid time";
+  }
+
   const [hours, minutes] = time24.split(":").map(Number);
+
+  if (isNaN(hours) || isNaN(minutes)) {
+    console.error("Invalid time format:", time24);
+    return "Invalid time";
+  }
+
   const period = hours >= 12 ? "PM" : "AM";
   const hours12 = hours % 12 || 12; // Convert 0 to 12 for 12 AM
   return `${hours12}:${minutes.toString().padStart(2, "0")} ${period}`;
@@ -27,9 +43,8 @@ export const formatDateToMMDDYYYY = (dateString) => {
 
 // Convert DD-MM-YYYY to YYYY-MM-DD
 export const formatDateToYYYYMMDD = (dateString) => {
-  const [day, month, year] = dateString.split("-");
-  if (!day || !month || !year) return null; // Invalid format
-  if (isNaN(day) || isNaN(month) || isNaN(year)) return null; // Ensure numeric
+  const [month, day, year] = dateString.split("-");
+  if (!month || !day || !year) return null; // Invalid format
   return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
 };
 
