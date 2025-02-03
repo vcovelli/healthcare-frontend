@@ -2,11 +2,16 @@ import React, { useState, useEffect } from "react";
 import apiClient from "../api/apiClient";
 import Navbar from "../components/Navbar";
 import { getAuthToken } from "../utils/authUtils";
+import ConfirmModal from "../components/ConfirmModal";
+import { deleteAppointment } from "../api/appointmentsAPI";
 
 const AdminDashboard = () => {
   const [profiles, setProfiles] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [error, setError] = useState("");
+  const [isConfirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [actionToConfirm, setActionToConfirm] = useState(null);
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -44,8 +49,12 @@ const AdminDashboard = () => {
     fetchData();
   }, []);
 
-  const handleDeleteProfile = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this profile?")) return;
+  const handleDeleteProfile = (id) => {
+    setActionToConfirm(() => () => confirmDeleteProfile(id));
+    setConfirmModalOpen(true);
+  };
+  
+  const confirmDeleteProfile = async (id) => {
     try {
       const token = await getAuthToken();
       await apiClient.delete(`/profiles/${id}/`, {
@@ -58,23 +67,25 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error("Error deleting profile:", error.message || error.response);
       alert("Failed to delete profile. Please try again.");
+    } finally {
+      setConfirmModalOpen(false);
     }
   };
 
-  const handleDeleteAppointment = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this appointment?")) return;
+  const handleDeleteClick = (appointmentId) => {
+    setActionToConfirm(() => () => handleDeleteAppointment(appointmentId));
+    setConfirmModalOpen(true);
+  };
+  
+  const handleDeleteAppointment = async (appointmentId) => {
     try {
-      const token = await getAuthToken();
-      await apiClient.delete(`/appointments/${id}/`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setAppointments((prev) => prev.filter((appt) => appt.id !== id));
-      alert("Appointment deleted successfully!");
+      await deleteAppointment(appointmentId);
+      console.log(`Appointment ${appointmentId} deleted.`);
+      // Update state or refresh appointments
     } catch (error) {
-      console.error("Error deleting appointment:", error.message || error.response);
-      alert("Failed to delete appointment. Please try again.");
+      console.error("Error deleting appointment:", error);
+    } finally {
+      setConfirmModalOpen(false);
     }
   };
 
@@ -136,7 +147,7 @@ const AdminDashboard = () => {
                   <td className="p-4 text-center">
                     <button
                       className="bg-red-500 text-white text-sm px-4 py-2 rounded hover:bg-red-600"
-                      onClick={() => handleDeleteAppointment(appointment.id)}
+                      onClick={() => handleDeleteClick(appointment.id)}
                     >
                       Delete
                     </button>
@@ -146,6 +157,16 @@ const AdminDashboard = () => {
             </tbody>
           </table>
         </CollapsibleSection>
+        <ConfirmModal
+          isOpen={isConfirmModalOpen}
+          onClose={() => setConfirmModalOpen(false)}
+          onConfirm={() => {
+            if (actionToConfirm) actionToConfirm();
+          }}
+          message="Are you sure you want to delete this profile?"
+          className="relative bg-white rounded-2xl shadow-xl max-w-sm w-full p-8 mx-auto z-50"
+          overlayClassName="fixed inset-0 bg-black/70 flex items-center justify-center z-40"
+        />
       </div>
     </div>
   );

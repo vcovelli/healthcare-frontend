@@ -2,17 +2,33 @@ import React from "react";
 import { deleteAppointment } from "../api/appointmentsAPI";
 import { FiEdit, FiTrash2 } from "react-icons/fi"; // Import icons
 import { formatDateToMMDDYYYY, formatTime24to12 } from "../utils/formatDate";
+import ConfirmModal from "../components/ConfirmModal";
+
+
 
 const AppointmentCard = ({ appointment, onEdit, onDelete }) => {
-  const handleDelete = async () => {
-    if (window.confirm("Are you sure you want to delete this appointment?")) {
-      try {
-        await deleteAppointment(appointment.id);
-        onDelete(appointment.id); // Notify the parent component to update the state
-      } catch (error) {
-        console.error("Error deleting appointment:", error);
-        alert("Failed to delete the appointment. Please try again.");
-      }
+  const [isConfirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [actionToConfirm, setActionToConfirm] = useState(null);
+  const [modalMessage, setModalMessage] = useState("");
+
+    const handleDeleteClick = (appointment) => {
+      setActionToConfirm(() => () => handleDeleteAppointment(appointment.id));
+      setConfirmModalOpen(true);
+    
+      // Store appointment details for the modal
+      setModalMessage(`Are you sure you want to delete the appointment "${appointment.title}" on ${formatDateToMMDDYYYY(appointment.date)}?`);
+  };
+  
+  const handleDeleteAppointment = async (appointmentId) => {
+    try {
+      await deleteAppointment(appointmentId);
+      console.log(`Appointment ${appointmentId} deleted.`);
+      // Notify parent component to refresh or update state
+      onDelete(appointmentId);
+    } catch (error) {
+      console.error("Error deleting appointment:", error);
+    } finally {
+      setConfirmModalOpen(false);
     }
   };
 
@@ -44,12 +60,23 @@ const AppointmentCard = ({ appointment, onEdit, onDelete }) => {
         </button>
         <button
           className="flex items-center space-x-2 bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition"
-          onClick={handleDelete} // Trigger the delete function
+          onClick={() => handleDeleteClick(appointment)} // Trigger the delete function
         >
           <FiTrash2 />
           <span>Delete</span>
         </button>
       </div>
+      {/* Confirmation Modal */}
+      <ConfirmModal
+        isOpen={isConfirmModalOpen}
+        onClose={() => setConfirmModalOpen(false)}
+        onConfirm={() => {
+          if (actionToConfirm) actionToConfirm();
+        }}
+        message={modalMessage}
+        className="relative bg-white rounded-2xl shadow-xl max-w-sm w-full p-8 mx-auto z-50"
+        overlayClassName="fixed inset-0 bg-black/70 flex items-center justify-center z-40"
+      />
     </div>
   );
 };
