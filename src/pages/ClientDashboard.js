@@ -88,61 +88,79 @@ const ClientDashboard = ({ appointments = [], onCreateAppointment, businessHours
   };
 
   const handleEditAppointment = (appointment) => {
+    if (!appointment) {
+      console.error("Error: No appointment data provided.");
+      return;
+    }
+  
+    if (!appointment.id) {
+      console.warn("Warning: Appointment ID is missing but trying to edit:", appointment);
+      // Allow editing even if ID is missing (but warn)
+    }
+  
+    console.log("Editing Appointment ID:", appointment.id || "MISSING");
     console.log("Raw Appointment Data:", appointment);
   
-    setCurrentAppointment(appointment); // Track the current appointment being edited
-    setSelectedDate(formatDateToMMDDYYYY(appointment.appointment_date)); // Pre-fill the date in the modal
+    // Ensure the date is formatted as "YYYY-MM-DD"
+    const formattedDate = appointment.appointment_date
+      ? appointment.appointment_date.split("T")[0] // Extract YYYY-MM-DD
+      : "";
   
+    // Ensure time is correctly formatted
+    let formattedTime = "";
     if (appointment.time) {
       try {
-        const formattedTime = formatTime24to12(appointment.time); // Ensure proper formatting
-        setSelectedTime(formattedTime);
+        formattedTime = formatTime24to12(appointment.time);
         console.log("Formatted Time:", formattedTime);
       } catch (error) {
         console.error("Error formatting time:", error);
-        setSelectedTime(''); // Reset if time parsing fails
       }
     } else {
       console.warn("Invalid time found:", appointment.time);
-      setSelectedTime('');
     }
   
-    setTitle(appointment.title); // Pre-fill the title in the modal
-    setIsModalOpen(true); // Open the modal
+    // Set states
+    setCurrentAppointment(appointment);
+    setSelectedDate(formattedDate);
+    setSelectedTime(formattedTime);
+    setTitle(appointment.title);
+    setIsModalOpen(true);
   };
   
   const saveEditedAppointment = async () => {
-    if (!currentAppointment) return;
+    if (!currentAppointment || !currentAppointment.id) {
+      console.error("Error: Appointment ID is missing", currentAppointment);
+      alert("Error: Appointment ID is missing.");
+      return;
+    }
   
     const updatedDetails = {
-      id: currentAppointment.id, // Use the appointment ID for updating
+      id: currentAppointment.id,
       title: title.trim(),
-      appointment_date: formatDateToYYYYMMDD(selectedDate), // Convert to backend format
-      time: convertTimeTo24Hour(selectedTime), // Convert to 24-hour format
+      appointment_date: selectedDate, 
+      time: convertTimeTo24Hour(selectedTime),
     };
-
-    console.log("Updated Details:", updatedDetails); // Debug payload
+  
+    console.log("Updated Details Payload:", updatedDetails);
   
     try {
-      const result = await updateAppointment(currentAppointment.id, updatedDetails);
-      console.log("Appointment updated:", result);
+      await updateAppointment(currentAppointment.id, updatedDetails);
+      console.log("Appointment updated successfully");
   
-      // Update the state with the edited appointment
-      setAppointmentList((prev) =>
-        prev.map((appt) =>
-          appt.id === currentAppointment.id
-            ? { ...appt, ...updatedDetails, date: formatDateToMMDDYYYY(updatedDetails.date) } // Display format
-            : appt
-        )
-      );
+      // **Reload the latest appointment list after updating**
+      const updatedAppointments = await fetchAppointments();
+      setAppointmentList(updatedAppointments); // **Directly updating state from the backend response**
   
-      closeModal();
+      setTimeout(() => {
+        closeModal();
+      }, 100); // Small delay to ensure UI updates before closing
     } catch (error) {
       console.error("Error updating appointment:", error.message || error.response);
       alert("Failed to update appointment. Please try again.");
     }
   };
-
+  
+  
   const handleDeleteRequest = (appointment) => {
     setAppointmentToDelete(appointment);
     setModalMessage(
@@ -175,34 +193,44 @@ const ClientDashboard = ({ appointments = [], onCreateAppointment, businessHours
   const handleSaveAppointment = async () => {
     console.log("Selected Date:", selectedDate);
     console.log("Selected Time:", selectedTime);
-
+  
     if (!selectedDate || !selectedTime) {
       alert('Please select a date and time.');
       return;
     }
-
+  
     const appointmentDetails = {
       title: title.trim(),
       appointment_date: formatDateToYYYYMMDD(selectedDate), // Convert to backend format
       time: convertTimeTo24Hour(selectedTime), // Ensure 24-hour format for time
-  };
-
+    };
+  
     try {
       const result = await saveAppointment(appointmentDetails);
       console.log('Appointment saved successfully:', result);
-
+  
+      if (!result || !result.id) {
+        console.error("Error: Appointment was created but has no ID", result);
+        alert("Error: The new appointment did not receive an ID.");
+        return;
+      }
+  
       const formattedAppointment = {
         ...result,
-        date: formatDateToMMDDYYYY(result.appointment_date), // Format for display
+        date: formatDateToMMDDYYYY(result.appointment_date), // Ensure correct format for UI
       };
-
+  
+      console.log("Adding new appointment to state:", formattedAppointment);
+  
+      // **Force UI Update by using a new array reference**
       setAppointmentList((prev) => [...prev, formattedAppointment]);
+  
       closeModal(); // Close the modal after saving
     } catch (error) {
       console.error('Error saving appointment:', error.message || error.response);
       alert('Failed to save appointment. Please try again.');
     }
-  };
+  };  
 
   const handleConfirmAppointment = () => {
     if (!selectedTime) {
@@ -225,17 +253,19 @@ const ClientDashboard = ({ appointments = [], onCreateAppointment, businessHours
     const allSlots = Array.from({ length: (endHour - startHour) * 2 }, (_, i) => {
       const hour = startHour + Math.floor(i / 2);
       const minutes = i % 2 === 0 ? "00" : "30";
-      const time = `${hour % 12 === 0 ? 12 : hour % 12}:${minutes} ${
-        hour < 12 ? "AM" : "PM"
-      }`;
-      return time;
+      return `${hour % 12 === 0 ? 12 : hour % 12}:${minutes} ${hour < 12 ? "AM" : "PM"}`;
     });
-
-    const bookedSlots = appointments
-      .filter((appt) => appt.appointment_date === selectedDate)
-      .map((appt) => appt.time);
-
-    return allSlots.filter((slot) => !bookedSlots.includes(slot));
+  
+    // Get booked slots for the selected date
+    const bookedSlots = appointmentList
+      .filter((appt) => formatDateToMMDDYYYY(appt.appointment_date) === selectedDate)
+      .map((appt) => formatTime24to12(appt.time));
+  
+    // Mark booked slots
+    return allSlots.map((slot) => ({
+      time: slot,
+      isBooked: bookedSlots.includes(slot),
+    }));
   };
 
   const getISODateTime = (date, time) => {
@@ -283,8 +313,9 @@ const ClientDashboard = ({ appointments = [], onCreateAppointment, businessHours
               if (info.dateStr >= today) openModal(info.dateStr); // For new appointments
             }}
             eventClick={(info) => {
-              const { title, start, extendedProps } = info.event;
+              const { id, title, start, extendedProps } = info.event;
               handleEditAppointment({
+                id,
                 title,
                 appointment_date: start.toISOString(),
                 time: extendedProps.time, // Use the time stored in extendedProps
@@ -412,10 +443,11 @@ const ClientDashboard = ({ appointments = [], onCreateAppointment, businessHours
                 <input
                   type="date"
                   className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:ring focus:ring-blue-300 focus:border-blue-500 text-gray-700"
-                  value={selectedDate} // Bind to selectedDate state
+                  value={selectedDate || ''} // Ensure the value is either a valid date or an empty string
                   onChange={(e) => {
-                    const newDate = e.target.value; // Format to MM-DD-YYYY
-                    setSelectedDate(newDate); // Update state
+                    const newDate = e.target.value; // This will already be in yyyy-MM-dd format
+                    console.log("Selected new date:", newDate);
+                    setSelectedDate(newDate); // Update state directly with the new date
                   }}
                   min={new Date().toISOString().split("T")[0]} // Restrict to today or future dates
                   required
@@ -436,8 +468,15 @@ const ClientDashboard = ({ appointments = [], onCreateAppointment, businessHours
                   Select a time
                 </option>
                 {getAvailableTimeSlots().map((slot, index) => (
-                  <option key={index} value={slot}>
-                    {slot}
+                  <option
+                    key={index}
+                    value={slot.time}
+                    disabled={slot.isBooked}
+                    className={`${
+                      slot.isBooked ? "text-gray-400 line-through cursor-not-allowed" : "text-black"
+                    }`}
+                  >
+                    {slot.time}
                   </option>
                 ))}
               </select>
