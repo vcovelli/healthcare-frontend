@@ -61,15 +61,16 @@ export const deleteAppointment = async (id) => {
 };
 
 // Function to update an appointment by ID
-export const updateAppointment = async (id, updatedData) => {
+export const updateAppointment = async (id, appointmentDetails) => {
   try {
     const token = await getAuthToken(); // Get Firebase token
     console.log("Auth Token (Update):", token);
 
-    const response = await apiClient.put(`/appointments/${id}/`, updatedData, {
+    const response = await apiClient.put(`/appointments/${id}/`, appointmentDetails, {
       headers: {
         Authorization: `Bearer ${token}`, // Attach token
       },
+      body: JSON.stringify(appointmentDetails),
     });
     return response.data; // Return updated appointment data
   } catch (error) {
